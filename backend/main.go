@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 	db "github.com/minrui13/backend/database"
@@ -27,7 +28,13 @@ func main() {
 	}
 
 	//init server
-	newServer := server.NewServer(":8080", dbPool)
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("PORT not set in environment")
+	}
+	port = ":" + port
+
+	newServer := server.NewServer(port, dbPool)
 
 	if err := newServer.Run(); err != nil {
 		log.Fatal(err)
