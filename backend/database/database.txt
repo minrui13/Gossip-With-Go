@@ -1,0 +1,14 @@
+For easy use 
+
+//Create users table
+CREATE TABLE users (
+  user_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  username VARCHAR(255) NOT NULL UNIQUE,
+  created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+//Insert users to table
+INSERT INTO users (username) VALUES ('minrui');
+
+//Get all users to table
+SELECT * from users;
