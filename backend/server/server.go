@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgxpool"
 	cors "github.com/minrui13/backend/middleware"
-	"github.com/minrui13/backend/router"
+	usersRoute "github.com/minrui13/backend/router/users"
 )
 
 type APIServer struct {
@@ -27,7 +27,7 @@ func (s *APIServer) Run() error {
 	newRouter := mux.NewRouter()
 	newRouter.Use(cors.CORS)
 	subrouter := newRouter.PathPrefix("/api").Subrouter()
-	router.NewHandler(s.db).Router(subrouter.PathPrefix("/users").Subrouter())
+	usersRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/users").Subrouter())
 
 	log.Println("Listening on", s.addr)
 
