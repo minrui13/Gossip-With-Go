@@ -3,6 +3,7 @@ package usersRoute
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -28,7 +29,8 @@ func (h *Handler) Router(r *mux.Router) *mux.Router {
 
 	r.HandleFunc("/", h.GetAllUsers).Methods("GET")
 	r.HandleFunc("/addNewUser", h.AddNewUser).Methods("POST")
-	r.HandleFunc("/getByUsername", h.GetUserByUsername).Methods("POST")
+	r.HandleFunc("/getByUsername", h.Login).Methods("POST")
+	r.HandleFunc("/updateUser", h.UpdateUser).Methods("PUT")
 	r.HandleFunc("/{id}", h.GetUserById).Methods("GET")
 
 	return r
@@ -51,7 +53,8 @@ func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		var u types.User
 		var created time.Time
 
-		if err := rows.Scan(&u.User_id, &u.Username, &u.Image_id, &u.Points, &created); err != nil {
+		if err := rows.Scan(&u.User_id, &u.Username, &u.DisplayName,
+			&u.Bio, &u.Image_id, &u.Points, &created); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -82,7 +85,8 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = h.db.QueryRow(ctx, `SELECT * FROM users WHERE user_id = $1`, userID).
-		Scan(&user.User_id, &user.Username, &user.Image_id, &user.Points, &created)
+		Scan(&user.User_id, &user.Username, &user.Username,
+			&user.DisplayName, &user.Image_id, &user.Points, &created)
 
 	if err != nil {
 		util.WriteError(w, http.StatusNotFound, err)
@@ -93,7 +97,7 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 // Get user by username (Login)
-func (h *Handler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var user = new(types.User)
 	var created time.Time
@@ -107,7 +111,7 @@ func (h *Handler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.db.QueryRow(ctx, `SELECT * FROM users WHERE username = $1`, payload.Username).
-		Scan(&user.User_id, &user.Username, &user.Image_id, &user.Points, &created)
+		Scan(&user.User_id, &user.Username, &user.DisplayName, &user.Bio, &user.Image_id, &user.Points, &created)
 
 	if err != nil {
 		util.WriteError(w, http.StatusNotFound, err)
@@ -164,5 +168,40 @@ func (h *Handler) AddNewUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	util.WriteJSON(w, http.StatusOK, userID)
+
+}
+
+// Update user information
+func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user := new(types.UpdateUser)
+	var payload types.UpdateUser
+	err := json.NewDecoder(r.Body).Decode(&payload)
+
+	if err != nil {
+		fmt.Println(err)
+		util.WriteError(w, http.StatusBadRequest, errors.New("invalid inputs"))
+		return
+	}
+
+	err = h.db.QueryRow(ctx,
+		`UPDATE users SET username = $1, display_name = $2, bio = $3, image_id = $4 
+		WHERE user_id = $5 RETURNING user_id, username, display_name, bio, image_id;`,
+		payload.Username, payload.DisplayName, payload.Bio, payload.Image_id, payload.User_id,
+	).Scan(&user.User_id, &user.Username, &user.DisplayName, &user.Bio, &user.Image_id)
+
+	//user_id wrong
+	if err == pgx.ErrNoRows {
+		util.WriteError(w, http.StatusNotFound, errors.New("user not found"))
+		return
+	}
+
+	//For internal server error, 500
+	if err != nil {
+		util.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	util.WriteJSON(w, http.StatusOK, user)
 
 }
