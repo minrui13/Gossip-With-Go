@@ -28,8 +28,8 @@ func NewHandler(db *pgxpool.Pool) *Handler {
 func (h *Handler) Router(r *mux.Router) *mux.Router {
 
 	r.HandleFunc("/", h.GetAllUsers).Methods("GET")
-	r.HandleFunc("/addNewUser", h.AddNewUser).Methods("POST")
-	r.HandleFunc("/getByUsername", h.Login).Methods("POST")
+	r.HandleFunc("/signup", h.SignUp).Methods("POST")
+	r.HandleFunc("/login", h.Login).Methods("POST")
 	r.HandleFunc("/updateUser", h.UpdateUser).Methods("PUT")
 	r.HandleFunc("/{id}", h.GetUserById).Methods("GET")
 
@@ -76,8 +76,9 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user := new(types.User)
 	var created time.Time
-	//convert userID to integer (check if valid integer)
+	//get id from params
 	id := mux.Vars(r)["id"]
+	//convert userID to integer (check if valid integer)
 	userID, err := strconv.Atoi(id)
 
 	if err != nil {
@@ -118,19 +119,26 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	jwtUser := types.JWTUserInfo{
+		User_id:  user.User_id,
+		Username: user.Username,
+	}
+	//get JWT secret from .env
 	secret := []byte(config.Envs.JWTSecret)
-	token, err := auth.CreateJWT(secret, user.User_id)
+	//create JWT token
+	token, err := auth.CreateJWT(secret, jwtUser)
 
 	if err != nil {
 		util.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
+	//pass token to frontend to store in local storage
 	util.WriteJSON(w, http.StatusOK, map[string]string{"token": token})
 }
 
 // Add new user
-func (h *Handler) AddNewUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var payload types.NewUser
 	err := json.NewDecoder(r.Body).Decode(&payload)

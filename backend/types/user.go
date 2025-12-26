@@ -23,3 +23,8 @@ type UpdateUser struct {
 	Bio         sql.NullString `json:"bio"`
 	Image_id    int            `json:"image_id"`
 }
+
+type JWTUserInfo struct {
+	User_id  int    `json:"user_id"`
+	Username string `json:"username"`
+}

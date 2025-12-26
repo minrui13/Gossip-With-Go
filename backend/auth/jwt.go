@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/minrui13/backend/config"
+	"github.com/minrui13/backend/types"
 	"github.com/minrui13/backend/util"
 )
 
@@ -18,10 +19,11 @@ type contextKey string
 
 const UserKey contextKey = "userID"
 
-func CreateJWT(secret []byte, userID int) (string, error) {
+func CreateJWT(secret []byte, userID types.JWTUserInfo) (string, error) {
 	expiration := time.Second * time.Duration(config.Envs.JWTExpirationInSeconds)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userID":    strconv.Itoa(userID),
+		"user_id":   strconv.Itoa(userID.User_id),
+		"username":  userID.Username,
 		"expiredAt": time.Now().Add(expiration).Unix(),
 	})
 	tokenString, err := token.SignedString(secret)
@@ -37,20 +39,21 @@ func VerifyToken(w http.ResponseWriter, r *http.Request) {
 
 	//check if authHeader is empty
 	if authToken == "" {
-		util.WriteError(w, http.StatusUnauthorized, errors.New("missing authorization header"))
+		util.WriteError(w, http.StatusUnauthorized, errors.New("Missing authorization header"))
 		return
 	}
 
 	//Split token and check for bearer
 	tokenHeader := strings.Split(authToken, " ")
 	if !strings.HasPrefix(authToken, "Bearer ") {
-		util.WriteError(w, http.StatusUnauthorized, errors.New("invalid authorization format"))
+		util.WriteError(w, http.StatusUnauthorized, errors.New("Invalid token"))
 		return
 	}
 
 	authToken = tokenHeader[1]
 
-	token, err := jwt.Parse(authToken, func(authToken *jwt.Token) (interface{}, error) {
+	//verifying jwt token
+	token, err := jwt.Parse(authToken, func(authToken *jwt.Token) (any, error) {
 		if _, ok := authToken.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", authToken.Header["alg"])
 		}
@@ -58,13 +61,31 @@ func VerifyToken(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil || !token.Valid {
-		util.WriteError(w, http.StatusForbidden, errors.New("not authorized"))
+		util.WriteError(w, http.StatusForbidden, errors.New("Not authorized"))
+		return
+	}
+
+	//getting user_id from token
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Invalid token claims", http.StatusForbidden)
+		return
+	}
+	//get user_id and username from jwt
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user id", http.StatusForbidden)
+		return
+	}
+	username, ok := claims["username"].(string)
+	if !ok {
+		util.WriteError(w, http.StatusForbidden, errors.New("invalid username claim"))
 		return
 	}
 
 	util.WriteJSON(w, http.StatusOK, map[string]any{
-		"auth":    true,
-		"message": "token is valid",
+		"user_id":  int(userID),
+		"username": username,
 	})
 
 }
