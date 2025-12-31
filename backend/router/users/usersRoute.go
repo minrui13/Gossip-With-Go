@@ -26,7 +26,6 @@ func NewHandler(db *pgxpool.Pool) *Handler {
 }
 
 func (h *Handler) Router(r *mux.Router) *mux.Router {
-
 	r.HandleFunc("/", h.GetAllUsers).Methods("GET")
 	r.HandleFunc("/signup", h.SignUp).Methods("POST")
 	r.HandleFunc("/login", h.Login).Methods("POST")
@@ -133,8 +132,19 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	loginInfo := types.LoginInfo{
+		User_id:      user.User_id,
+		Username:     user.Username,
+		DisplayName:  user.DisplayName,
+		Bio:          user.Bio,
+		Image_id:     user.Image_id,
+		Points:       user.Points,
+		Created_date: user.Created_date,
+		Token:        token,
+	}
+
 	//pass token to frontend to store in local storage
-	util.WriteJSON(w, http.StatusOK, map[string]string{"token": token})
+	util.WriteJSON(w, http.StatusOK, loginInfo)
 }
 
 // Add new user
