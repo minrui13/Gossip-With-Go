@@ -1,13 +1,41 @@
 package types
 
-type User struct {
-	User_id      int    `json:"user_id"`
-	Username     string `json:"username"`
-	Image_id     int    `json:"image_id"`
-	Points       int    `json:"points"`
-	Created_date string `json:"created_date"`
-}
+import "database/sql"
 
 type NewUser struct {
 	Username string `json:"username"`
+}
+
+type JWTUserInfo struct {
+	User_id  int    `json:"user_id"`
+	Username string `json:"username"`
+}
+
+type UpdateUser struct {
+	User_id     int            `json:"user_id"`
+	Username    string         `json:"username"`
+	DisplayName string         `json:"display_name"`
+	Bio         sql.NullString `json:"bio"`
+	Image_id    int            `json:"image_id"`
+}
+
+type User struct {
+	User_id      int            `json:"user_id"`
+	Username     string         `json:"username"`
+	DisplayName  string         `json:"display_name"`
+	Bio          sql.NullString `json:"bio"`
+	Image_id     int            `json:"image_id"`
+	Points       int            `json:"points"`
+	Created_date string         `json:"created_date"`
+}
+
+type LoginInfo struct {
+	User_id      int            `json:"user_id"`
+	Username     string         `json:"username"`
+	DisplayName  string         `json:"display_name"`
+	Bio          sql.NullString `json:"bio"`
+	Image_id     int            `json:"image_id"`
+	Points       int            `json:"points"`
+	Created_date string         `json:"created_date"`
+	Token        string         `json:"token"`
 }

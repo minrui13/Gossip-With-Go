@@ -1,26 +1,36 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { AuthProvider, useAuth } from "./auth/Auth";
+import { RequireAuth } from "./auth/RequireAuth";
+import MainPage from "./pages/MainPage";
+import Login from "./pages/Login";
+import "./css/base.css";
+import Profile from "./pages/Profile";
+import PageLayout from "./components/PageLayout";
+import { ToastContainer } from "react-toastify";
 
-function App() {
+export default function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <ToastContainer
+        autoClose={5000}
+        limit={5}
+        position="top-right"
+        closeOnClick
+      />
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<PageLayout />}>
+              <Route path="/" element={<MainPage />} />
+              <Route
+                path="/profile"
+                element={<RequireAuth component={<Profile />} />}
+              />
+            </Route>
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </>
   );
 }
-
-export default App;
