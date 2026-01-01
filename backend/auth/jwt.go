@@ -1,7 +1,7 @@
+// Everything JWT token related
 package auth
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -19,20 +19,26 @@ type contextKey string
 
 const UserKey contextKey = "userID"
 
+// Creating JWT Token
 func CreateJWT(secret []byte, userID types.JWTUserInfo) (string, error) {
+	//setting expiration time
 	expiration := time.Second * time.Duration(config.Envs.JWTExpirationInSeconds)
+	//signing jwt token with user_id and username
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":   strconv.Itoa(userID.User_id),
 		"username":  userID.Username,
 		"expiredAt": time.Now().Add(expiration).Unix(),
 	})
 	tokenString, err := token.SignedString(secret)
+	//check for errors
 	if err != nil {
 		return "", err
 	}
+	//return token
 	return tokenString, nil
 }
 
+// Verifying Token
 func VerifyToken(w http.ResponseWriter, r *http.Request) {
 	//check token and token header
 	authToken := r.Header.Get("Authorization")
@@ -65,13 +71,12 @@ func VerifyToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//getting user_id from token
+	//get user_id and username from jwt
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		http.Error(w, "Invalid token claims", http.StatusForbidden)
 		return
 	}
-	//get user_id and username from jwt
 	userID, ok := claims["user_id"].(float64)
 	if !ok {
 		http.Error(w, "Invalid user id", http.StatusForbidden)
@@ -83,17 +88,10 @@ func VerifyToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//pass back user_id and username
 	util.WriteJSON(w, http.StatusOK, map[string]any{
 		"user_id":  int(userID),
 		"username": username,
 	})
 
-}
-
-func GetUserIDFromContext(ctx context.Context) int {
-	userID, ok := ctx.Value(UserKey).(int)
-	if !ok {
-		return -1
-	}
-	return userID
 }
