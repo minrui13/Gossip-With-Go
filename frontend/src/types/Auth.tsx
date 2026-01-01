@@ -1,4 +1,4 @@
-import { ReactNode } from "react"
+import { JSX, ReactNode } from "react"
 
 export type AuthProviderType = {
     children : ReactNode
@@ -10,7 +10,10 @@ export type AuthValueType = {
 
 export type AuthContextType = {
   user: any;
-  signIn: (token: string) => void;
+  signIn: (username: string) => Promise<any>;
   signOut: () => void;
 };
 
+export type RequireAuthType = {
+    component : JSX.Element
+}

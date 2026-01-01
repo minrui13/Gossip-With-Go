@@ -52,13 +52,12 @@ export const AuthProvider = ({ children }: AuthProviderType) => {
 
   async function signIn(username: string) {
     await mainAxios
-      .post(`/users/login`, username)
+      .post(`/users/login`, {username: username})
       .then((response) => {
-        console.log(response);
+        setUser(response.data)
+        localStorage.setItem("token", response.data.token)
+        return response.data
       })
-      .catch((error) => {
-        console.log(error);
-      });
   }
 
   function signOut() {
