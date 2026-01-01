@@ -1,0 +1,46 @@
+@font-face {
+  font-family: "positions";
+  src: url("../font/PositionsByArixbored-Regular\ .otf");
+}
+
+@font-face {
+  font-family: "zabal";
+  src: url("../font/ZabalDEMO-Bold.otf");
+}
+
+:root {
+  --honey-yellow: #ffc03b;
+  --wood-brown: #432616;
+  --branch-brown: #8e4f2d;
+  --milk-white: #fff9ec;
+  --oak-red: #a33003;
+  --tin-gray: #cccdc7;
+  --toastify-color-success: #ffc03b;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-family: "zabal";
+}
+
+p,
+button,
+label {
+  font-family: "Segoe UI";
+}
+
+.zoom-in {
+  transition: transform 0.4s cubic-bezier(0, -0.03, 0.2, 0.99);
+  transform: scale(1);
+}
+
+.zoom-in:hover {
+  transform: scale(1.05);
+}
+
+.Toastify__toast {
+  font-size: 13px;
+}

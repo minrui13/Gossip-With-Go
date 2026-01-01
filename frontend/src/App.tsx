@@ -1,19 +1,36 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import { AuthProvider } from './auth/Auth';
-import { RequireAuth } from './auth/RequireAuth';
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { AuthProvider, useAuth } from "./auth/Auth";
+import { RequireAuth } from "./auth/RequireAuth";
+import MainPage from "./pages/MainPage";
+import Login from "./pages/Login";
+import "./css/base.css";
+import Profile from "./pages/Profile";
+import PageLayout from "./components/PageLayout";
+import { ToastContainer } from "react-toastify";
 
-function App() {
+export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={null} />
-          <Route path="/login" element={null} />
-          <Route element={<RequireAuth />}>
-            <Route path="/profile" element={null} />
-          </Route>
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+    <>
+      <ToastContainer
+        autoClose={5000}
+        limit={5}
+        position="top-right"
+        closeOnClick
+      />
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<PageLayout />}>
+              <Route path="/" element={<MainPage />} />
+              <Route
+                path="/profile"
+                element={<RequireAuth component={<Profile />} />}
+              />
+            </Route>
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </>
   );
 }
