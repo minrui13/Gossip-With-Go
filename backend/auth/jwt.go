@@ -77,9 +77,14 @@ func VerifyToken(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid token claims", http.StatusForbidden)
 		return
 	}
-	userID, ok := claims["user_id"].(float64)
+	userIDStr, ok := claims["user_id"].(string)
 	if !ok {
 		http.Error(w, "Invalid user id", http.StatusForbidden)
+		return
+	}
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		util.WriteError(w, http.StatusForbidden, errors.New("invalid user id format"))
 		return
 	}
 	username, ok := claims["username"].(string)
@@ -90,7 +95,7 @@ func VerifyToken(w http.ResponseWriter, r *http.Request) {
 
 	//pass back user_id and username
 	util.WriteJSON(w, http.StatusOK, map[string]any{
-		"user_id":  int(userID),
+		"user_id":  userID,
 		"username": username,
 	})
 

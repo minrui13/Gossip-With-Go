@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 
 	"github.com/joho/godotenv"
@@ -12,6 +11,7 @@ import (
 
 func main() {
 
+	//attempting to load env fle
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -20,11 +20,6 @@ func main() {
 	dbPool, err := db.Connect()
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	var version string
-	if err := dbPool.QueryRow(context.Background(), "SELECT version()").Scan(&version); err != nil {
-		log.Fatalf("Query failed: %v", err)
 	}
 
 	//init server
