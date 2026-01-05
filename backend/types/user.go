@@ -1,8 +1,13 @@
 package types
 
-import "database/sql"
+type SignUpPayload struct {
+	Image_id    int     `json:"image_id"`
+	Username    string  `json:"username"`
+	DisplayName *string `json:"display_name"`
+	Bio         *string `json:"bio"`
+}
 
-type NewUser struct {
+type LoginPayload struct {
 	Username string `json:"username"`
 }
 
@@ -12,30 +17,34 @@ type JWTUserInfo struct {
 }
 
 type UpdateUser struct {
-	User_id     int            `json:"user_id"`
-	Username    string         `json:"username"`
-	DisplayName string         `json:"display_name"`
-	Bio         sql.NullString `json:"bio"`
-	Image_id    int            `json:"image_id"`
+	User_id     int     `json:"user_id"`
+	Username    string  `json:"username"`
+	DisplayName *string `json:"display_name"`
+	Bio         *string `json:"bio"`
+	Image_id    int     `json:"image_id"`
 }
 
 type User struct {
-	User_id      int            `json:"user_id"`
-	Username     string         `json:"username"`
-	DisplayName  string         `json:"display_name"`
-	Bio          sql.NullString `json:"bio"`
-	Image_id     int            `json:"image_id"`
-	Points       int            `json:"points"`
-	Created_date string         `json:"created_date"`
+	User_id      int     `json:"user_id"`
+	Username     string  `json:"username"`
+	DisplayName  *string `json:"display_name"`
+	Bio          *string `json:"bio"`
+	Image_id     int     `json:"image_id"`
+	Points       int     `json:"points"`
+	Created_date string  `json:"created_date"`
 }
 
 type LoginInfo struct {
-	User_id      int            `json:"user_id"`
-	Username     string         `json:"username"`
-	DisplayName  string         `json:"display_name"`
-	Bio          sql.NullString `json:"bio"`
-	Image_id     int            `json:"image_id"`
-	Points       int            `json:"points"`
-	Created_date string         `json:"created_date"`
-	Token        string         `json:"token"`
+	User_id      int     `json:"user_id"`
+	Username     string  `json:"username"`
+	DisplayName  *string `json:"display_name"`
+	Bio          *string `json:"bio"`
+	Image_id     int     `json:"image_id"`
+	Points       int     `json:"points"`
+	Created_date string  `json:"created_date"`
+	Token        string  `json:"token"`
+}
+
+type CheckUserExists struct {
+	Exists bool `json:"exists"`
 }
