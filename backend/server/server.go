@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minrui13/backend/auth"
 	cors "github.com/minrui13/backend/middleware"
+	imagesRoute "github.com/minrui13/backend/router/images"
 	usersRoute "github.com/minrui13/backend/router/users"
 )
 
@@ -24,13 +25,17 @@ func NewServer(addr string, db *pgxpool.Pool) *APIServer {
 	}
 }
 
+// running backend api routes
 func (s *APIServer) Run() error {
 	newRouter := mux.NewRouter()
 	newRouter.Use(cors.CORS)
+	newRouter.Methods(http.MethodOptions).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	subrouter := newRouter.PathPrefix("/api").Subrouter()
 	subrouter.HandleFunc("/verifyToken", auth.VerifyToken).Methods("POST")
 	usersRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/users").Subrouter())
-	//imagesRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/images").Subrouter())
+	imagesRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/images").Subrouter())
 
 	log.Println("Listening on", s.addr)
 
