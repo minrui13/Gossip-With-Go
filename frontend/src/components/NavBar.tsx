@@ -1,4 +1,4 @@
-import { Container, Nav, Navbar } from "react-bootstrap";
+import { Container, Nav, Navbar, NavDropdown } from "react-bootstrap";
 import "../css/navBar.css";
 import Logo from "../images/Logo_with_text.PNG";
 import { Autocomplete, InputAdornment, TextField } from "@mui/material";
@@ -6,12 +6,14 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import DefaultImage from "../images/BuzzBeeNotFound.PNG";
 import { useAuth } from "../auth/Auth";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function NavBar() {
   const { user } = useAuth();
   const options = ["abc"];
   const searchPlaceholder = "Search Anything";
+  const [showPostDropdown, setShowPostDropdown] = useState(false);
+
 
   return (
     <Navbar
@@ -88,14 +90,26 @@ export default function NavBar() {
               >
                 {/*Sign in users */}
                 {/* Create post / community - signed in users*/}
-                <Nav.Link className="nav-link p-0" href="">
-                  <button
+                {/* <button
                     className="btn nav-btn-members woodbrown-woodbrown-milkwhite milkwhite-woodbrown-woodbrown-hover nav-btn"
                     type="button"
                   >
                     Create <i className="fa-solid fa-plus"></i>
-                  </button>
-                </Nav.Link>
+                  </button> */}
+                <NavDropdown
+                  title={
+                    <p className="nav-create-dropdown-title">
+                      Create <i className="fa-solid fa-plus"></i>
+                    </p>
+                  }
+                  className="nav-create-dropdown nav-btn-members woodbrown-woodbrown-milkwhite milkwhite-woodbrown-woodbrown-hover nav-btn p-0"
+                  show={showPostDropdown}
+                  onMouseEnter={() => setShowPostDropdown(true)}
+                  onMouseLeave={() => setShowPostDropdown(false)}
+                >
+                  <NavDropdown.Item  href="/" style={{borderTopRightRadius: 5, borderTopLeftRadius: 5}}>Hive</NavDropdown.Item>
+                  <NavDropdown.Item href="/" style={{borderBottomRightRadius: 5, borderBottomLeftRadius: 5}}>Buzz</NavDropdown.Item>
+                </NavDropdown>
                 {/* Profile - signed in users */}
                 <Nav.Link className="nav-link p-0" href="">
                   <div className="nav-profile-div">
