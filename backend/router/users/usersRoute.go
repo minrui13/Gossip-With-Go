@@ -38,7 +38,7 @@ func (h *Handler) Router(r *mux.Router) *mux.Router {
 	//Update User
 	r.HandleFunc("/updateUser", h.UpdateUser).Methods("PUT")
 	//Get user by user id
-	r.HandleFunc("/{id}", h.GetUserById).Methods("GET")
+	r.HandleFunc("/{id}", h.GetUserById).Methods("POST")
 
 	return r
 }
@@ -46,7 +46,7 @@ func (h *Handler) Router(r *mux.Router) *mux.Router {
 // Get user all user
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	rows, err := h.db.Query(ctx, `SELECT * FROM users`)
+	rows, err := h.db.Query(ctx, `SELECT user_id, username, display_name, bio, image_id, points, created_date FROM users`)
 
 	//database error 500 status code
 	//same as res.send(500)
@@ -87,15 +87,25 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	//convert userID to integer (check if valid integer)
 	userID, err := strconv.Atoi(id)
-
+	//check if id is an integer
 	if err != nil {
 		util.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
-	err = h.db.QueryRow(ctx, `SELECT * FROM users WHERE user_id = $1`, userID).
-		Scan(&user.User_id, &user.Username, &user.Username,
-			&user.DisplayName, &user.Image_id, &user.Points, &created)
 
+	//only verified users can access the data
+	//check token and token header
+	authToken := r.Header.Get("Authorization")
+	//check if authHeader is empty
+	if authToken == "" {
+		util.WriteError(w, http.StatusUnauthorized, errors.New("Missing authorization header"))
+		return
+	}
+
+	//get data from db
+	err = h.db.QueryRow(ctx, `SELECT user_id, username, display_name, image_id, points, created_date FROM users WHERE user_id = $1`, userID).
+		Scan(&user.User_id, &user.Username,
+			&user.DisplayName, &user.Image_id, &user.Points, &created)
 	if err != nil {
 		util.WriteError(w, http.StatusNotFound, err)
 		return
@@ -141,7 +151,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.db.QueryRow(ctx, `SELECT * FROM users WHERE username = $1`, payload.Username).
+	err = h.db.QueryRow(ctx, `SELECT user_id, username, display_name, bio, image_id, points, created_date FROM users WHERE username = $1`, payload.Username).
 		Scan(&user.User_id, &user.Username, &user.DisplayName, &user.Bio, &user.Image_id, &user.Points, &created)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -154,8 +164,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jwtUser := types.JWTUserInfo{
-		User_id:  user.User_id,
-		Username: user.Username,
+		User_id: user.User_id,
 	}
 	//get JWT secret from .env
 	secret := []byte(config.Envs.JWTSecret)

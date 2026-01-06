@@ -12,8 +12,7 @@ type LoginPayload struct {
 }
 
 type JWTUserInfo struct {
-	User_id  int    `json:"user_id"`
-	Username string `json:"username"`
+	User_id int `json:"user_id"`
 }
 
 type UpdateUser struct {
