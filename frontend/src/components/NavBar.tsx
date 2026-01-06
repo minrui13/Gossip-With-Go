@@ -3,11 +3,13 @@ import "../css/navBar.css";
 import Logo from "../images/Logo_with_text.PNG";
 import { Autocomplete, InputAdornment, TextField } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import dummyProfile from "../images/BuzzBee1.PNG";
+import DefaultImage from "../images/BuzzBeeNotFound.PNG";
 import { useAuth } from "../auth/Auth";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function NavBar() {
+  const { user } = useAuth();
   const options = ["abc"];
   const searchPlaceholder = "Search Anything";
 
@@ -79,33 +81,7 @@ export default function NavBar() {
             </Nav.Link>
 
             {/*public users */}
-   
-              <div
-                className="d-flex justify-content-between align-items-center"
-                style={{ gap: 20 }}
-              >
-                {/*Sign up - public users */}
-                <Nav.Link className="nav-link p-0" href="/signup">
-                  <button
-                    className="btn nav-btn-non-members branchbrown-branchbrown-milkwhite-hover nav-btn"
-                    type="button"
-
-                  >
-                    Sign Up
-                  </button>
-                </Nav.Link>
-
-                {/*Log in - public users */}
-                <Nav.Link className="nav-link p-0" href="/login">
-                  <button
-                    className="btn  nav-btn-non-members branchbrown-branchbrown-milkwhite-hover nav-btn"
-                    type="button"
-                  >
-                    Log In
-                  </button>
-                </Nav.Link>
-              </div>
-       
+            {user ? (
               <div
                 className="d-flex justify-content-between align-items-center"
                 style={{ gap: 20 }}
@@ -123,11 +99,43 @@ export default function NavBar() {
                 {/* Profile - signed in users */}
                 <Nav.Link className="nav-link p-0" href="">
                   <div className="nav-profile-div">
-                    <img src={dummyProfile} className="nav-profile-img" />
+                    {user && user.image_name ? (
+                      <img
+                        src={require(`../images/${user.image_name}`)}
+                        className="nav-profile-img"
+                      />
+                    ) : (
+                      <img src={DefaultImage} className="nav-profile-img" />
+                    )}
                   </div>
                 </Nav.Link>
               </div>
-      
+            ) : (
+              <div
+                className="d-flex justify-content-between align-items-center"
+                style={{ gap: 20 }}
+              >
+                {/*Sign up - public users */}
+                <Nav.Link className="nav-link p-0" href="/signup">
+                  <button
+                    className="btn nav-btn-non-members branchbrown-branchbrown-milkwhite-hover nav-btn"
+                    type="button"
+                  >
+                    Sign Up
+                  </button>
+                </Nav.Link>
+
+                {/*Log in - public users */}
+                <Nav.Link className="nav-link p-0" href="/login">
+                  <button
+                    className="btn  nav-btn-non-members branchbrown-branchbrown-milkwhite-hover nav-btn"
+                    type="button"
+                  >
+                    Log In
+                  </button>
+                </Nav.Link>
+              </div>
+            )}
           </Nav>
         </Navbar.Collapse>
       </div>
