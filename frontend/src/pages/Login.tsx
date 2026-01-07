@@ -4,52 +4,78 @@ import { useState } from "react";
 import BuzzBeeLogo from "../images/BuzzBee_Logo.PNG";
 import { useAuth } from "../auth/Auth";
 import axios from "axios";
-import Loading from "../util/Loading";
+import Loading from "../components/Loading";
 import { Spinner } from "react-bootstrap";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import Error from "../utils/Error";
+import handleError from "../utils/Error";
 
 export default function Login() {
-  const [errorText, setErrorText] = useState("");
+  //sign in method in useAuth
   const { signIn } = useAuth();
+  //login input
   const [loginInput, setLoginInput] = useState("");
+  //error text for username
+  const [errorText, setErrorText] = useState("");
+  //manage loading
   const [isLoading, setIsLoading] = useState(false);
+  //navigate user to another page
   const navigate = useNavigate();
 
   async function submitLogin() {
     setIsLoading(true);
+    //Check if user input anythinf
     if (loginInput.trim().length == 0) {
-      changeErrorText("Please input a correct username");
+      changeErrorText("Please input a username");
       return;
     }
     try {
       await signIn(loginInput);
+      //stop loading
       setIsLoading(false);
-
-      toast("Navigating to homepage...", {
+      //use toast to notify users
+      toast("Login successfully!", {
         position: "top-right",
-        autoClose: 3000,
+        autoClose: 4000,
         type: "success",
       });
-
+      setTimeout(() => {
+        setIsLoading(true);
+        toast("Navigating to homepage...", {
+          position: "top-right",
+          autoClose: 3000,
+          type: "success",
+        });
+      }, 1000);
+      //navigate to homepage
       setTimeout(() => {
         navigate("/");
-      }, 4000);
+      }, 5000);
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.response?.data?.error == "no rows in result set") {
-          changeErrorText("Invalid username");
-        }
-      } else {
-        changeErrorText("An unexpected error occurred");
-      }
+      //handle errors
+      handleError(error, {
+        onAxiosError: (err) => {
+          changeErrorText(err);
+        },
+        onOtherError: (err) => {
+          changeErrorText(err);
+        },
+      });
     }
   }
 
   function changeErrorText(text: string) {
     setTimeout(() => {
+      //stop loading
       setIsLoading(false);
+      //display error text
       setErrorText(text);
+      //notify users
+      toast(text, {
+        autoClose: 3000,
+        type: "error",
+      });
     }, 800);
   }
 
@@ -57,16 +83,18 @@ export default function Login() {
     <div style={{ backgroundColor: "var(--milk-white)" }}>
       {<Loading isLoading={isLoading} />}
       <div
-        id="login-form-container"
-        className="d-flex align-items-center justify-content-center"
+        className="d-flex align-items-center justify-content-center 
+        signup-login-form-container"
       >
-        <div id="login-form-main-div">
-          <h1 id="login-title">
-            Login <img src={BuzzBeeLogo} id="login-logo-img" />
+        <div className="signup-login-form-main-div" id="login-form-main-div">
+          <h1 className="signup-login-title">
+            Login <img src={BuzzBeeLogo} className="signup-login-logo-img" />
           </h1>
 
           <div>
-            <p id="login_username_label">Username: </p>
+            <p id="login-username-label" className="login-signup-label">
+              Username:{" "}
+            </p>
             <TextField
               error={errorText.trim().length > 0}
               id="login_username_input"
@@ -105,16 +133,23 @@ export default function Login() {
               }}
               fullWidth
             />
-            <p id="login-error-text">{errorText}</p>
+            <p id="login-error-text" className="signup-login-error-text">
+              {errorText}
+            </p>
           </div>
-          <button
-            type="button"
-            className="btn btn-primary zoom-in"
-            id="login-btn"
-            onClick={() => submitLogin()}
-          >
-            Submit
-          </button>
+          <div style={{ width: "100%" }}>
+            <button
+              style={{ width: "100%" }}
+              type="button"
+              className="btn milkwhite-woodbrown-woodbrown milkwhite-woodbrown-woodbrown-hover zoom-in"
+              onClick={() => submitLogin()}
+            >
+              Submit
+            </button>
+            <p className="signup-login-note">
+              Don't have an account? <a href="/signup">Sign up here</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

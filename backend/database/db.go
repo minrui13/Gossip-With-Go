@@ -1,3 +1,4 @@
+// connecting the database to the server
 package db
 
 import (

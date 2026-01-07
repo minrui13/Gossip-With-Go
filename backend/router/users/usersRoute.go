@@ -1,6 +1,7 @@
 package usersRoute
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,11 +27,18 @@ func NewHandler(db *pgxpool.Pool) *Handler {
 }
 
 func (h *Handler) Router(r *mux.Router) *mux.Router {
+	//Get all user
 	r.HandleFunc("/", h.GetAllUsers).Methods("GET")
+	//Get user by username
+	r.HandleFunc("/checkUserExists", h.CheckUserExists).Methods("POST")
+	//Sign Up
 	r.HandleFunc("/signup", h.SignUp).Methods("POST")
+	//Login
 	r.HandleFunc("/login", h.Login).Methods("POST")
+	//Update User
 	r.HandleFunc("/updateUser", h.UpdateUser).Methods("PUT")
-	r.HandleFunc("/{id}", h.GetUserById).Methods("GET")
+	//Get user by user id
+	r.HandleFunc("/{id}", h.GetUserById).Methods("POST")
 
 	return r
 }
@@ -38,7 +46,7 @@ func (h *Handler) Router(r *mux.Router) *mux.Router {
 // Get user all user
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	rows, err := h.db.Query(ctx, `SELECT * FROM users`)
+	rows, err := h.db.Query(ctx, `SELECT user_id, username, display_name, bio, image_id, points, created_date FROM users`)
 
 	//database error 500 status code
 	//same as res.send(500)
@@ -79,15 +87,25 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	//convert userID to integer (check if valid integer)
 	userID, err := strconv.Atoi(id)
-
+	//check if id is an integer
 	if err != nil {
 		util.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
-	err = h.db.QueryRow(ctx, `SELECT * FROM users WHERE user_id = $1`, userID).
-		Scan(&user.User_id, &user.Username, &user.Username,
-			&user.DisplayName, &user.Image_id, &user.Points, &created)
 
+	//only verified users can access the data
+	//check token and token header
+	authToken := r.Header.Get("Authorization")
+	//check if authHeader is empty
+	if authToken == "" {
+		util.WriteError(w, http.StatusUnauthorized, errors.New("Missing authorization header"))
+		return
+	}
+
+	//get data from db
+	err = h.db.QueryRow(ctx, `SELECT user_id, username, display_name, image_id, points, created_date FROM users WHERE user_id = $1`, userID).
+		Scan(&user.User_id, &user.Username,
+			&user.DisplayName, &user.Image_id, &user.Points, &created)
 	if err != nil {
 		util.WriteError(w, http.StatusNotFound, err)
 		return
@@ -96,12 +114,11 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	util.WriteJSON(w, http.StatusOK, user)
 }
 
-// Get user by username (Login)
-func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+// Check if user exists by getting user by username
+func (h *Handler) CheckUserExists(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	var user = new(types.User)
-	var created time.Time
-	var payload types.NewUser
+	var resultType = new(types.CheckUserExists)
+	var payload types.LoginPayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 
 	//check username
@@ -110,17 +127,44 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.db.QueryRow(ctx, `SELECT * FROM users WHERE username = $1`, payload.Username).
+	err = h.db.QueryRow(ctx, `SELECT EXISTS (SELECT user_id FROM users WHERE username = $1);`, payload.Username).
+		Scan(&resultType.Exists)
+
+	if err != nil {
+		util.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+	util.WriteJSON(w, http.StatusOK, resultType)
+}
+
+// Login
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var user = new(types.User)
+	var created time.Time
+	var payload types.LoginPayload
+	err := json.NewDecoder(r.Body).Decode(&payload)
+
+	//check username
+	if err != nil || payload.Username == "" {
+		util.WriteError(w, http.StatusBadRequest, errors.New("invalid username"))
+		return
+	}
+
+	err = h.db.QueryRow(ctx, `SELECT user_id, username, display_name, bio, image_id, points, created_date FROM users WHERE username = $1`, payload.Username).
 		Scan(&user.User_id, &user.Username, &user.DisplayName, &user.Bio, &user.Image_id, &user.Points, &created)
 
+	if errors.Is(err, sql.ErrNoRows) {
+		util.WriteError(w, http.StatusUnauthorized, errors.New("invalid username"))
+		return
+	}
 	if err != nil {
 		util.WriteError(w, http.StatusNotFound, err)
 		return
 	}
 
 	jwtUser := types.JWTUserInfo{
-		User_id:  user.User_id,
-		Username: user.Username,
+		User_id: user.User_id,
 	}
 	//get JWT secret from .env
 	secret := []byte(config.Envs.JWTSecret)
@@ -150,7 +194,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // Add new user
 func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	var payload types.NewUser
+	var payload types.SignUpPayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 
 	//check username
@@ -175,8 +219,8 @@ func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.db.QueryRow(ctx,
-		`INSERT INTO users (username) VALUES ($1) RETURNING  user_id;`,
-		payload.Username,
+		`INSERT INTO users (image_id, username, display_name, bio) VALUES ($1, $2, $3, $4) RETURNING  user_id;`,
+		payload.Image_id, payload.Username, payload.DisplayName, payload.Bio,
 	).Scan(&userID)
 
 	//For internal server error, 500

@@ -1,3 +1,4 @@
+// Loading .env file and  provide easy retrieval for other functions
 package config
 
 import (
@@ -12,6 +13,7 @@ import (
 var Envs = initConfig()
 
 func initConfig() types.Config {
+	//load .env file
 	godotenv.Load()
 	return types.Config{
 		PORT:                   getEnv("PORT", "8080"),
@@ -21,15 +23,20 @@ func initConfig() types.Config {
 	}
 }
 
+// get the non-integral data from the .env file
 func getEnv(key, fallback string) string {
+	//look for data in.env file or return the fallback value
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
 	return fallback
 }
 
+// get the integral data from the .env file
 func getEnvAsInt(key string, fallback int64) int64 {
+	//look for data in.env file or return the fallback value
 	if value, ok := os.LookupEnv(key); ok {
+		//parse value to check for validity
 		i, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			return fallback

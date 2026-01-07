@@ -1,0 +1,105 @@
+@media (max-width: 900px) {
+  #signup-form-main-div {
+    min-width: 80vw;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1400px) {
+  #signup-form-main-div {
+    min-width: 600px;
+  }
+}
+
+@media (min-width: 1400px) and (max-width: 2000px) {
+  #signup-form-main-div {
+    min-width: 700px;
+  }
+}
+
+
+@media (min-width: 2000px) {
+  #signup-form-main-div {
+    min-width: 800px;
+  }
+}
+
+.signup-label {
+  margin-bottom: 5px;
+}
+
+#signup-modal-profile-img .css-10d30g3-MuiPaper-root-MuiDialog-paper {
+  max-width: 400px;
+}
+
+#signup-modal-profile-img .MuiDialogContent-root {
+  padding: 20px 10px;
+}
+#signup-modal-profile-img #dialog-content {
+  background-color: "#fffbf3ff";
+}
+
+#signup-modal-profile-img #dialog-actions {
+  background-color: "#fffbf3ff";
+}
+
+#signup-modal-selected-profile-img-main-div {
+  margin: 5px 0px 10px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+#signup-modal-selected-profile-img {
+  background-color: var(--milk-white);
+  border-radius: 50px;
+  border: 1.5px solid var(--honey-yellow);
+  filter: drop-shadow(0px 0px 5px #9c9c9c6e);
+}
+#signup-modal-selected-profile-img img {
+  width: 80px;
+}
+
+#signup-modal-profile-img-main-div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.signup-modal-profile-img {
+  flex: 0 0 33.333%;
+  margin: 9px 0px;
+  display: flex;
+  justify-content: center;
+}
+.signup-modal-profile-img img {
+  width: 60px;
+}
+
+#signup-profile-img {
+  width: 50px;
+  border-radius: 50px;
+  background-color: var(--milk-white);
+  border: 1.5px solid var(--caramel-brown);
+  aspect-ratio: 1/1;
+}
+
+#signup-profile-img img {
+  width: 100%;
+}
+
+#signup-profile-btn {
+  background-color: var(--caramel-brown);
+  color: var(--milk-white);
+  border: 1.8px solid var(--caramel-brown);
+}
+
+.signup-error-text {
+  margin-bottom: 0px;
+  margin-top: 3px;
+  font-size: 14px;
+}
+
+#signup-bio-charCount {
+  font-size: 12px;
+  font-weight: 500;
+}
