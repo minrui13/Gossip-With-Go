@@ -9,6 +9,7 @@ import (
 	"github.com/minrui13/backend/auth"
 	cors "github.com/minrui13/backend/middleware"
 	imagesRoute "github.com/minrui13/backend/router/images"
+	topicsRouter "github.com/minrui13/backend/router/topics"
 	usersRoute "github.com/minrui13/backend/router/users"
 )
 
@@ -36,6 +37,7 @@ func (s *APIServer) Run() error {
 	subrouter.HandleFunc("/verifyToken", auth.VerifyToken).Methods("POST")
 	usersRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/users").Subrouter())
 	imagesRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/images").Subrouter())
+	topicsRouter.NewHandler(s.db).Router(subrouter.PathPrefix("/topics").Subrouter())
 
 	log.Println("Listening on", s.addr)
 
