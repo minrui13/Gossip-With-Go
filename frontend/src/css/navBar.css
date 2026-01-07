@@ -1,6 +1,8 @@
 .nav-container {
     background-color: var(--honey-yellow);
     max-height: 56px;
+    border-bottom: 2px solid var(--wood-brown);
+    filter: 0px 0px 10px rgba(5, 5, 5, 0.632)
 }
 
 .css-1tlcqt-MuiAutocomplete-root .MuiOutlinedInput-root {
