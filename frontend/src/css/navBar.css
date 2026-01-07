@@ -1,3 +1,8 @@
+.nav-container {
+    background-color: var(--honey-yellow);
+    max-height: 56px;
+}
+
 .css-1tlcqt-MuiAutocomplete-root .MuiOutlinedInput-root {
   padding: 2px 5px 2px 10px !important;
 }

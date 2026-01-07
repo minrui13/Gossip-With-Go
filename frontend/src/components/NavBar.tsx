@@ -19,7 +19,7 @@ export default function NavBar() {
     <Navbar
       expand="lg"
       fixed="top"
-      style={{ backgroundColor: "var(--honey-yellow)" }}
+      className="nav-container"
     >
       <div className="container-fluid m-0 p=0">
         <Navbar.Toggle aria-controls="collapse-nav" />
