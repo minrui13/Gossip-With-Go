@@ -28,6 +28,13 @@ export default function App() {
             <Route path="/signup" element={<SignUp />} />
             <Route element={<PageLayout />}>
               <Route path="/" element={<MainPage />} />
+              <Route path="/hive">
+                <Route path=":hive_name" element={<MainPage />} />
+              </Route>
+              <Route
+                path="/profile/:username"
+                element={<RequireAuth component={<Profile/>} />}
+              />
             </Route>
             <Route path="/404" element={<Error errorCode="404" />} />
             <Route path="/401" element={<Error errorCode="401" />} />

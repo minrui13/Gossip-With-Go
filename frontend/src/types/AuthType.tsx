@@ -9,9 +9,11 @@ export type AuthValueType = {
 }
 
 export type AuthContextType = {
-  user: any;
-  signIn: (username: string) => Promise<any>;
-  signOut: () => void;
+  user: any
+  isAuthLoading: boolean
+  verifyToken: ()=> void
+  signIn: (username: string) => Promise<any>
+  signOut: () => void
 };
 
 export type RequireAuthType = {
