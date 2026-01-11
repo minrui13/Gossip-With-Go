@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { addNewUser, checkUserExists } from "../api/userApi";
 import handleError from "../utils/Error";
 import { getAllImages } from "../api/imageApi";
-import { ProfileImageType } from "../types/SignUp";
+import { ProfileImageType } from "../types/SignUpType";
 import BuzzBeeNotFound from "../images/BuzzBeeNotFound.PNG";
 import Info from "../components/Info";
 

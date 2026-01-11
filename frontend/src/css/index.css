@@ -1,0 +1,117 @@
+/*Buttons*/
+.btn {
+  font-weight: 600;
+}
+
+/*milk white bg, wood brown border, wood brown text*/
+.milkwhite-woodbrown-woodbrown {
+  background-color: var(--milk-white);
+  color: var(--wood-brown);
+  border: 1.4px solid var(--wood-brown);
+}
+
+/*milk white bg, wood brown border, wood brown text disabled*/
+.milkwhite-woodbrown-woodbrown:disabled {
+  background-color: var(--milk-white);
+  color: #43261670;
+  border: 1.4px solid #43261670;
+}
+
+/*milk white bg, wood brown border, wood brown text on hover*/
+.milkwhite-woodbrown-woodbrown-hover:hover {
+  background-color: var(--milk-white);
+  color: var(--wood-brown);
+  border: 1.4px solid var(--wood-brown);
+}
+
+/*wood brown bg, wood brown border, milk white text*/
+.woodbrown-woodbrown-milkwhite {
+  background-color: var(--wood-brown);
+  color: var(--milk-white);
+  border: 1.8px solid var(--wood-brown);
+}
+
+/*wood brown bg, wood brown border, milk white disabled*/
+.woodbrown-woodbrown-milkwhite:disabled{
+  background-color: var(--wood-brown);
+  color: #fff9ec70;
+  border: 1.8px solid #43261670;
+}
+
+/*wood brown bg, wood brown border, milk white text on hover*/
+.woodbrown-woodbrown-milkwhite-hover:hover {
+  background-color: var(--wood-brown);
+  color: var(--milk-white);
+  border: 1.8px solid var(--wood-brown);
+}
+
+/*branch brown bg, branch brown border, milk white text*/
+.branchbrown-branchbrown-milkwhite {
+  background-color: var(--caramel-brown);
+  border-color: var(--caramel-brown);
+  color: var(--milk-white);
+}
+
+/*branch brown bg, branch brown border, milk white text disabled*/
+.branchbrown-branchbrown-milkwhite:disabled{
+  background-color: var(--caramel-brown);
+  border-color: var(--caramel-brown);
+  color: #fff9ec70;
+}
+
+/*branch brown bg, branch brown border, milk white text on hover*/
+.branchbrown-branchbrown-milkwhite-hover:hover {
+  background-color: var(--caramel-brown);
+  border-color: var(--caramel-brown);
+  color: var(--milk-white);
+}
+
+/*signup, login css*/
+.signup-login-form-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.signup-login-form-main-div {
+  padding: 40px;
+  background-color: var(--honey-yellow);
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  filter: drop-shadow(0px 0px 50px #89898942);
+}
+
+.signup-login-logo-img {
+  width: 45px;
+  margin-bottom: 10px;
+  margin-left: 5px;
+}
+
+.signup-login-title {
+  color: var(--wood-brown);
+}
+
+.signup-login-label {
+  font-weight: 600;
+  color: var(--caramel-brown);
+}
+
+.signup-login-error-text {
+  color: var(--oak-red);
+}
+
+.signup-login-note {
+  font-size: 12px;
+  margin-top: 10px;
+  font-weight: 500;
+  margin-bottom: 0px;
+  color: var(--wood-brown)
+}
+
+.signup-login-note a{
+  color: var(--caramel-brown);
+}

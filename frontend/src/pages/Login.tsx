@@ -36,14 +36,12 @@ export default function Login() {
       setIsLoading(false);
       //use toast to notify users
       toast("Login successfully!", {
-        position: "top-right",
         autoClose: 4000,
         type: "success",
       });
       setTimeout(() => {
         setIsLoading(true);
         toast("Navigating to homepage...", {
-          position: "top-right",
           autoClose: 3000,
           type: "success",
         });
@@ -80,7 +78,8 @@ export default function Login() {
   }
 
   return (
-    <div style={{ backgroundColor: "var(--milk-white)" }}>
+   
+    <div style={{ backgroundColor: "var(--milk-white)" }}> 
       {<Loading isLoading={isLoading} />}
       <div
         className="d-flex align-items-center justify-content-center 
@@ -118,7 +117,7 @@ export default function Login() {
                       borderColor:
                         errorText.trim().length > 0
                           ? "var(--oak-red)"
-                          : "var(--branch-brown)",
+                          : "var(--caramel-brown)",
                     },
                   },
                   "&:hover:not(.Mui-focused)": {
@@ -141,6 +140,7 @@ export default function Login() {
             <button
               style={{ width: "100%" }}
               type="button"
+              disabled={isLoading}
               className="btn milkwhite-woodbrown-woodbrown milkwhite-woodbrown-woodbrown-hover zoom-in"
               onClick={() => submitLogin()}
             >
