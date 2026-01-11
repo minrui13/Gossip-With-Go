@@ -1,7 +1,6 @@
 package topicsRouter
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,7 +23,7 @@ func (h *Handler) Router(r *mux.Router) *mux.Router {
 	//Get all topics
 	r.HandleFunc("/", h.GetAllTopics).Methods("GET")
 	//Get topic by id
-	r.HandleFunc("/{:id}", h.GetTopicById).Methods("Post")
+	r.HandleFunc("/{id}", h.GetTopicById).Methods("POST")
 	//Get most popular topic
 	r.HandleFunc("/getPopularTopics", h.FilterTopicsByPopularityAndName).Methods("Get")
 
@@ -34,12 +33,12 @@ func (h *Handler) Router(r *mux.Router) *mux.Router {
 // Get all topics
 func (h *Handler) GetAllTopics(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	rows, err := h.db.Query(ctx, `SELECT topic_id, topic_name, description, creator_id, created_date, viewership, category_id FROM topics`)
+	rows, err := h.db.Query(ctx, `SELECT topic_id, topic_name, description, creator_id, created_date, visibility, category_id FROM topics`)
 
 	//database error 500 status code
 	//same as res.send(500)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		util.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -49,8 +48,8 @@ func (h *Handler) GetAllTopics(w http.ResponseWriter, r *http.Request) {
 		var created time.Time
 
 		if err := rows.Scan(&topic.Topic_ID, &topic.Topic_Name, &topic.Description,
-			&topic.Creator_ID, &topic.Created_Date, &topic.Visibility, &topic.Category_ID); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			&topic.Creator_ID, &created, &topic.Visibility, &topic.Category_ID); err != nil {
+			util.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -59,7 +58,7 @@ func (h *Handler) GetAllTopics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		util.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -81,17 +80,8 @@ func (h *Handler) GetTopicById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//only verified users can access the data
-	//check token and token header
-	authToken := r.Header.Get("Authorization")
-	//check if authHeader is empty
-	if authToken == "" {
-		util.WriteError(w, http.StatusUnauthorized, errors.New("Missing authorization header"))
-		return
-	}
-
 	//get data from db
-	err = h.db.QueryRow(ctx, `SELECT topic_id, topic_name, description, creator_id, created_date, viewership, category_id FROM topics WHERE topic_id = $1`, topicID).
+	err = h.db.QueryRow(ctx, `SELECT topic_id, topic_name, description, creator_id, created_date, visibility, category_id FROM topics WHERE topic_id = $1`, topicID).
 		Scan(&topic.Topic_ID, &topic.Topic_Name, &topic.Description, &topic.Creator_ID, &created, &topic.Visibility, &topic.Category_ID)
 	if err != nil {
 		util.WriteError(w, http.StatusNotFound, err)
@@ -129,7 +119,7 @@ func (h *Handler) FilterTopicsByPopularityAndName(w http.ResponseWriter, r *http
 	rows, err := h.db.Query(
 		ctx,
 		`SELECT t.topic_id, t.topic_name, t.description, COUNT(tu.user_id) AS num_followers , t.creator_id, t.created_date, t.visibility, t.category_id 
-		FROM topics t LEFT JOIN topics_followers tu ON t.topic_id = tu.topic_id WHERE t.topic_name LIKE $1 GROUP BY t.topic_id 
+		FROM topics t LEFT JOIN topics_followers tu ON t.topic_id = tu.topic_id WHERE LOWER(t.topic_name) LIKE $1 and t.visibility = 'public' GROUP BY t.topic_id 
 		ORDER BY num_followers DESC LIMIT $2 OFFSET $3`,
 		search, limitQuery, offsetQuery,
 	)
@@ -139,7 +129,7 @@ func (h *Handler) FilterTopicsByPopularityAndName(w http.ResponseWriter, r *http
 		return
 	}
 
-	var topicsArr []types.FilterTopicResult
+	topicsArr := make([]types.FilterTopicResult, 0)
 	for rows.Next() {
 		var topic types.FilterTopicResult
 		var created time.Time
