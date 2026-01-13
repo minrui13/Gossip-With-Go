@@ -1,4 +1,4 @@
-import { TextField } from "@mui/material";
+import { IconButton, InputAdornment, TextField } from "@mui/material";
 import BuzzBeeLogo from "../images/BuzzBee_Logo.PNG";
 import Loading from "../components/Loading";
 import { useEffect, useState } from "react";
@@ -14,20 +14,28 @@ import BuzzBeeNotFound from "../images/BuzzBeeNotFound.PNG";
 import Info from "../components/Info";
 
 export default function SignUp() {
+  //specified requirements that are allowed, at least 1 lowercase, 1 uppercase, 1 number, 1 special charater
+  const passwordRequirementRegex =
+    /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{0,17}$/;
+  //all characters that are allowed
+  const passwordAllowedRegex = /^[A-Za-z\d!@#$%^&*]{0,17}$/;
   //get available Profile image from database
   const [profileImgArr, setProfileImgArr] = useState<ProfileImageType[]>([]);
-
   //sign up inputs and error
   const [signUpInput, setSignUpInput] = useState({
     image_id: 1,
     username: "",
     display_name: "",
     bio: "",
+    password: "",
+    confirm_password: "",
   });
   const [inputError, setInputError] = useState({
     username: "",
     display_name: "",
     bio: "",
+    password: "",
+    confirm_password: "",
   });
   //modal for profile image
   const [openModal, setOpenModal] = useState(false);
@@ -38,6 +46,11 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   //navigate user to another page
   const navigate = useNavigate();
+  //show password/confirm password
+  const [showPassword, setShowPassword] = useState({
+    password: false,
+    confirm_password: false,
+  });
 
   useEffect(() => {
     getProfileImage();
@@ -72,9 +85,22 @@ export default function SignUp() {
       });
       setIsLoading(false);
       return;
-    }
-    if (await isUserExists()) {
+    } else if (await isUserExists()) {
       toast("Username already in use", {
+        autoClose: 3000,
+        type: "error",
+      });
+      setIsLoading(false);
+      return;
+    } else if (signUpInput.password.trim().length < 8) {
+      toast("Password must be 8-16 characters", {
+        autoClose: 3000,
+        type: "error",
+      });
+      setIsLoading(false);
+      return;
+    } else if (signUpInput.confirm_password !== signUpInput.password) {
+      toast("Please verify password", {
         autoClose: 3000,
         type: "error",
       });
@@ -113,7 +139,7 @@ export default function SignUp() {
   }
 
   return (
-    <div style={{ backgroundColor: "var(--milk-white)" }}>
+    <div id="sign-up">
       {<Loading isLoading={isLoading} />}
       <Modal
         dialogId="signup-modal-profile-img"
@@ -226,6 +252,7 @@ export default function SignUp() {
                 </p>
                 <TextField
                   size="small"
+                  disabled={isLoading}
                   value={signUpInput.username}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -272,6 +299,7 @@ export default function SignUp() {
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       fontFamily: "Segoe UI",
+                      fontSize: "14.5px",
                       "& .MuiOutlinedInput-notchedOutline": {
                         borderColor:
                           inputError.username.trim().length > 0
@@ -329,6 +357,7 @@ export default function SignUp() {
                 </p>
                 <TextField
                   size="small"
+                  disabled={isLoading}
                   value={signUpInput.display_name}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -363,6 +392,7 @@ export default function SignUp() {
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       fontFamily: "Segoe UI",
+                      fontSize: " 14.5px",
                       "& .MuiOutlinedInput-notchedOutline": {
                         borderColor:
                           inputError.display_name.trim().length > 0
@@ -403,13 +433,13 @@ export default function SignUp() {
               <div className="mt-2">
                 <p className="signup-label signup-login-label">Bio: </p>
                 <TextField
+                  disabled={isLoading}
                   size="small"
                   multiline
                   minRows={3}
                   maxRows={3}
                   value={signUpInput.bio}
                   onChange={(e) => {
-                    console.log(e.target.value);
                     if (e.target.value.length <= 120) {
                       setSignUpInput((prev) => ({
                         ...prev,
@@ -420,6 +450,7 @@ export default function SignUp() {
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       fontFamily: "Segoe UI",
+                      fontSize: " 14.5px",
                       "& .MuiOutlinedInput-notchedOutline": {
                         borderColor: "#43434239",
                         borderWidth: "1.5px",
@@ -453,8 +484,269 @@ export default function SignUp() {
                   </p>
                 </div>
               </div>
+              {/*Password*/}
+              <div className="mt-2">
+                <p className="signup-label signup-login-label">
+                  Password:{" "}
+                  <Info
+                    iconStyle={{ color: "#fff9ec" }}
+                    title={
+                      <ul style={{ padding: "10px 0px 0px 15px" }}>
+                        <li className="mb-2">
+                          Password must be at least 8-16 characters
+                        </li>
+                        <li className="">
+                          Password must contain at least 1 lowercase, 1
+                          uppercase, 1 digit, 1 special character (!@#$%^&*) and
+                          no whitespace.
+                        </li>
+                      </ul>
+                    }
+                  />
+                </p>
+                <TextField
+                  size="small"
+                  type={showPassword.password ? "text" : "password"}
+                  disabled={isLoading}
+                  value={signUpInput.password}
+                  slotProps={{
+                    input: {
+                      //Add search button to the end of the textfield
+                      endAdornment: (
+                        <InputAdornment
+                          position="end"
+                          style={{ marginRight: 10, cursor: "pointer" }}
+                        >
+                          <IconButton
+                            className="sign-up-login-password-visibility"
+                            onClick={() => {
+                              setShowPassword((prev) => ({
+                                ...prev,
+                                password: !prev.password,
+                              }));
+                            }}
+                            edge="end"
+                          >
+                            <i
+                              className={
+                                showPassword.password
+                                  ? `fa-solid fa-eye`
+                                  : `fa-solid fa-eye-slash`
+                              }
+                            ></i>
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (!passwordAllowedRegex.test(value)) {
+                      setInputError((prev) => ({
+                        ...prev,
+                        password: "Character not allowed",
+                      }));
+                    } else if (value.trim().length > 16) {
+                      setInputError((prev) => ({
+                        ...prev,
+                        password: "Maximum only 16 characters",
+                      }));
+                    } else {
+                      setInputError((prev) => ({
+                        ...prev,
+                        password: "",
+                      }));
+                      setSignUpInput((prev) => ({
+                        ...prev,
+                        password: value.trim(),
+                      }));
+                    }
+                  }}
+                  onBlur={() => {
+                    if (signUpInput.password.trim().length < 8) {
+                      setInputError((prev) => ({
+                        ...prev,
+                        password: "Password must be more than 8 characters",
+                      }));
+                    } else if (
+                      !passwordRequirementRegex.test(signUpInput.password)
+                    ) {
+                      setInputError((prev) => ({
+                        ...prev,
+                        password: `Password must contain at least 1 lowercase, 1
+                          uppercase, 1 digit, 1 special character (!@#$%^&*) and
+                          no whitespace.`,
+                      }));
+                    } else {
+                      setInputError((prev) => ({
+                        ...prev,
+                        password: "",
+                      }));
+                    }
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      fontFamily: "Segoe UI",
+                      fontSize: " 14.5px",
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor:
+                          inputError.password.trim().length > 0
+                            ? "var(--oak-red)"
+                            : "#43434239",
+                        borderWidth:
+                          inputError.password.trim().length > 0
+                            ? "2px"
+                            : "1.5px",
+                      },
+                      "&.Mui-focused": {
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor:
+                            inputError.password.trim().length > 0
+                              ? "var(--oak-red)"
+                              : "var(--caramel-brown)",
+                        },
+                      },
+                      "&:hover:not(.Mui-focused)": {
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor:
+                            inputError.password.trim().length > 0
+                              ? "var(--oak-red)"
+                              : "#8e4f2d69",
+                        },
+                      },
+                    },
+                  }}
+                  fullWidth
+                />
+                {inputError.password.trim().length > 0 && (
+                  <p className="signup-login-error-text signup-error-text">
+                    {inputError.password}
+                  </p>
+                )}
+              </div>
+              {/*Confirm Password*/}
+              <div className="mt-2">
+                <p className="signup-label signup-login-label">
+                  Confirm Password:{" "}
+                </p>
+                <TextField
+                  type={showPassword.confirm_password ? "text" : "password"}
+                  size="small"
+                  value={signUpInput.confirm_password}
+                  disabled={
+                    isLoading ||
+                    inputError.password.trim().length > 0 ||
+                    signUpInput.password.trim().length == 0
+                  }
+                  slotProps={{
+                    input: {
+                      //Add eye button to toglle visibility
+                      endAdornment: (
+                        <InputAdornment
+                          position="end"
+                          style={{ marginRight: 10, cursor: "pointer" }}
+                        >
+                          <IconButton
+                            disabled={
+                              isLoading ||
+                              inputError.password.trim().length > 0 ||
+                              signUpInput.password.trim().length == 0
+                            }
+                            className="sign-up-login-password-visibility"
+                            onClick={() => {
+                              setShowPassword((prev) => ({
+                                ...prev,
+                                confirm_password: !prev.confirm_password,
+                              }));
+                            }}
+                            edge="end"
+                          >
+                            <i
+                              className={
+                                showPassword.confirm_password
+                                  ? `fa-solid fa-eye`
+                                  : `fa-solid fa-eye-slash`
+                              }
+                            ></i>
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    var regex = /^[A-Za-z\d!@#$%^&*]{0,17}$/;
+                    if (!regex.test(value)) {
+                      setInputError((prev) => ({
+                        ...prev,
+                        confirm_password: "Character not allowed",
+                      }));
+                    } else {
+                      setInputError((prev) => ({
+                        ...prev,
+                        confirm_password: "",
+                      }));
+                      setSignUpInput((prev) => ({
+                        ...prev,
+                        confirm_password: value,
+                      }));
+                    }
+                  }}
+                  onBlur={() => {
+                    if (signUpInput.confirm_password !== signUpInput.password) {
+                      setInputError((prev) => ({
+                        ...prev,
+                        confirm_password: "Password does not match",
+                      }));
+                    } else {
+                      setInputError((prev) => ({
+                        ...prev,
+                        confirm_password: "",
+                      }));
+                    }
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      fontFamily: "Segoe UI",
+                      fontSize: " 14.5px",
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor:
+                          inputError.confirm_password.trim().length > 0
+                            ? "var(--oak-red)"
+                            : "#43434239",
+                        borderWidth:
+                          inputError.confirm_password.trim().length > 0
+                            ? "2px"
+                            : "1.5px",
+                      },
+                      "&.Mui-focused": {
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor:
+                            inputError.confirm_password.trim().length > 0
+                              ? "var(--oak-red)"
+                              : "var(--caramel-brown)",
+                        },
+                      },
+                      "&:hover:not(.Mui-focused)": {
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor:
+                            inputError.confirm_password.trim().length > 0
+                              ? "var(--oak-red)"
+                              : "#8e4f2d69",
+                        },
+                      },
+                    },
+                  }}
+                  fullWidth
+                />
+                {inputError.confirm_password.trim().length > 0 && (
+                  <p className="signup-login-error-text signup-error-text">
+                    {inputError.confirm_password}
+                  </p>
+                )}
+              </div>
             </div>
-            <div style={{ width: "100%" }}>
+            <div style={{ width: "100%", marginTop: 25 }}>
               <button
                 type="button"
                 style={{ width: "100%" }}
