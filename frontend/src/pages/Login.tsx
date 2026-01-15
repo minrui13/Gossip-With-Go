@@ -1,6 +1,6 @@
 import { IconButton, InputAdornment, TextField } from "@mui/material";
 import "../css/login.css";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import BuzzBeeLogo from "../images/BuzzBee_Logo.PNG";
 import { useAuth } from "../auth/Auth";
 import axios from "axios";
@@ -27,6 +27,14 @@ export default function Login() {
   const [showPasswordVisibility, setShowPasswordVisibility] = useState(false);
   //navigate user to another page
   const navigate = useNavigate();
+
+  const form = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (form?.current) {
+      form.current.classList.add("signup-login-form-main-div-reset");
+    }
+  
+  }, []);
 
   async function submitLogin() {
     setIsLoading(true);
@@ -94,7 +102,11 @@ export default function Login() {
         className="d-flex align-items-center justify-content-center 
         signup-login-form-container"
       >
-        <div className="signup-login-form-main-div" id="login-form-main-div">
+        <div
+          className="signup-login-form-main-div"
+          id="login-form-main-div"
+          ref={form}
+        >
           <h1 className="signup-login-title">
             Login <img src={BuzzBeeLogo} className="signup-login-logo-img" />
           </h1>
@@ -120,7 +132,7 @@ export default function Login() {
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     fontFamily: "Segoe UI",
-                      fontSize: " 14.5px",
+                    fontSize: " 14.5px",
                     "& .MuiOutlinedInput-notchedOutline": {
                       borderColor: errorText.toLowerCase().includes("username")
                         ? "var(--oak-red)"
@@ -201,7 +213,7 @@ export default function Login() {
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     fontFamily: "Segoe UI",
-                      fontSize: " 14.5px",
+                    fontSize: " 14.5px",
                     "& .MuiOutlinedInput-notchedOutline": {
                       borderColor: errorText.toLowerCase().includes("password")
                         ? "var(--oak-red)"

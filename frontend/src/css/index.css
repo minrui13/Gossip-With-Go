@@ -32,7 +32,7 @@
 }
 
 /*wood brown bg, wood brown border, milk white disabled*/
-.woodbrown-woodbrown-milkwhite:disabled{
+.woodbrown-woodbrown-milkwhite:disabled {
   background-color: var(--wood-brown);
   color: #fff9ec70;
   border: 1.8px solid #43261670;
@@ -53,7 +53,7 @@
 }
 
 /*branch brown bg, branch brown border, milk white text disabled*/
-.branchbrown-branchbrown-milkwhite:disabled{
+.branchbrown-branchbrown-milkwhite:disabled {
   background-color: var(--caramel-brown);
   border-color: var(--caramel-brown);
   color: #fff9ec70;
@@ -66,6 +66,7 @@
   color: var(--milk-white);
 }
 
+/*------------------------------------------------------------------*/
 /*signup, login css*/
 .signup-login-form-container {
   width: 100vw;
@@ -83,6 +84,15 @@
   flex-direction: column;
   justify-content: space-between;
   filter: drop-shadow(0px 0px 50px #89898942);
+  transform: translateY(-50px);
+  opacity: 0;
+  transition: 0.5s opacity cubic-bezier(.22,.5,.43,.79), 0.3s transform cubic-bezier(0,2.31,.48,.14);
+}
+
+.signup-login-form-main-div-reset {
+  transform: translateX(0px) translateY(0px);
+  opacity: 1;
+
 }
 
 .signup-login-logo-img {
@@ -102,6 +112,7 @@
 
 .signup-login-error-text {
   color: var(--oak-red);
+  font-size: 14px;
 }
 
 .signup-login-note {
@@ -109,9 +120,20 @@
   margin-top: 10px;
   font-weight: 500;
   margin-bottom: 0px;
-  color: var(--wood-brown)
+  color: var(--wood-brown);
 }
 
-.signup-login-note a{
+.signup-login-note a {
   color: var(--caramel-brown);
+}
+
+/*------------------------------------------------------------------*/
+/*Outlet*/
+.page-layout-outlet {
+  width: 83vw;
+  height: 91vh;
+  position: absolute;
+  right: 0%;
+  bottom: 0%;
+  background-color: var(--milk-white);
 }
