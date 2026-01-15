@@ -5,8 +5,6 @@ import Loading from "../components/Loading";
 
 export const RequireAuth = ({ component }: RequireAuthType) => {
   const { user, isAuthLoading } = useAuth();
-  console.log("require auth user");
-  console.log(user);
 
   return isAuthLoading ? (
     <Loading isLoading={isAuthLoading} />

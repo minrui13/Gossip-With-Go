@@ -26,7 +26,7 @@ func CreateJWT(secret []byte, userID types.JWTUserInfo) (string, error) {
 	expiration := time.Second * time.Duration(config.Envs.JWTExpirationInSeconds)
 	//signing jwt token with user_id and username
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":   strconv.Itoa(userID.User_id),
+		"user_id":   strconv.Itoa(userID.UserId),
 		"expiredAt": time.Now().Add(expiration).Unix(),
 	})
 	tokenString, err := token.SignedString(secret)
