@@ -1,14 +1,18 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./Auth";
-import { RequireAuthType } from "../types/Auth";
+import { RequireAuthType } from "../types/AuthType";
+import Loading from "../components/Loading";
 
 export const RequireAuth = ({ component }: RequireAuthType) => {
-  const { user } = useAuth();
-  const location = useLocation();
+  const { user, isAuthLoading } = useAuth();
+  console.log("require auth user");
+  console.log(user);
 
-  if (!user) {
-    return <Navigate to="/" state={{ from: location }} replace />;
-  }
-
-  return component;
+  return isAuthLoading ? (
+    <Loading isLoading={isAuthLoading} />
+  ) : user ? (
+    component
+  ) : (
+    <Navigate replace to="/401" />
+  );
 };

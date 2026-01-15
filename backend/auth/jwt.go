@@ -13,6 +13,7 @@ import (
 	"github.com/minrui13/backend/config"
 	"github.com/minrui13/backend/types"
 	"github.com/minrui13/backend/util"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type contextKey string
@@ -73,12 +74,12 @@ func VerifyToken(w http.ResponseWriter, r *http.Request) {
 	//get user_id and username from jwt
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		http.Error(w, "Invalid token claims", http.StatusForbidden)
+		util.WriteError(w, http.StatusForbidden, errors.New("Invalid token claims"))
 		return
 	}
 	userIDStr, ok := claims["user_id"].(string)
 	if !ok {
-		http.Error(w, "Invalid user id", http.StatusForbidden)
+		util.WriteError(w, http.StatusForbidden, errors.New("Invalid user id"))
 		return
 	}
 	userID, err := strconv.Atoi(userIDStr)
@@ -92,4 +93,17 @@ func VerifyToken(w http.ResponseWriter, r *http.Request) {
 		"user_id": userID,
 	})
 
+}
+
+func HashPasword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
+}
+
+func ComparePasswords(hashed string, plain []byte) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashed), plain)
+	return err == nil
 }

@@ -3,10 +3,11 @@ import React, {
   ReactNode,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
-import { Navigate, useLocation } from "react-router-dom";
-import { AuthContextType, AuthProviderType } from "../types/Auth";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { AuthContextType, AuthProviderType } from "../types/AuthType";
 import { mainAxios } from "../api";
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -21,50 +22,89 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: AuthProviderType) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const hasCheckedAuth = useRef(false);
 
   useEffect(() => {
-    verifyToken();
+    if (hasCheckedAuth.current) return;
+    hasCheckedAuth.current = true;
+    async function initiateAuth() {
+      await verifyToken();
+    }
+    initiateAuth();
   }, []);
 
   //verifying token from local storage
   async function verifyToken() {
+    setIsAuthLoading(true);
     //get token from local storage
     let token = localStorage.getItem("token");
     try {
       //call backend to verify token
-      await mainAxios
-        .post(`/verifyToken`, "", {
+      const tokenPayload = await mainAxios.post(`/verifyToken`, "", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const userInfo = await mainAxios.post(
+        `/users/${tokenPayload.data.user_id}`,
+        "",
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        })
-        .then((result) => {
-          //set user details
-          setUser(result.data);
-        });
+        }
+      );
+      var userData = userInfo.data;
+      //get image name from image id
+      const imageData = await mainAxios.post(
+        `/images/${userData.image_id}`,
+        "",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      //put the image name into the json
+      userData.image_name = imageData.data.image_name;
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
     } catch (error) {
-      //remove token when error verifying token
       localStorage.removeItem("token");
       setUser(null);
+    } finally {
+      setIsAuthLoading(false);
     }
   }
 
   async function signIn(username: string) {
-    await mainAxios
-      .post(`/users/login`, {username: username})
-      .then((response) => {
-        setUser(response.data)
-        localStorage.setItem("token", response.data.token)
-        return response.data
-      })
+    try {
+      setIsAuthLoading(true);
+      const response = await mainAxios.post(`/users/login`, {
+        username: username,
+      });
+      localStorage.setItem("token", response.data.token);
+      await verifyToken();
+      setIsAuthLoading(false);
+      return response.data;
+    } catch (error) {
+      localStorage.removeItem("token");
+      setUser(null);
+      throw error;
+    }
   }
 
   function signOut() {
     localStorage.clear();
     setUser(null);
   }
-  
-  const value = { user, signIn, signOut };
+
+  const value = { user, isAuthLoading, verifyToken, signIn, signOut };
   return <AuthContext.Provider value={value}> {children}</AuthContext.Provider>;
 };

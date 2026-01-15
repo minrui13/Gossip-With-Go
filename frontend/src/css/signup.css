@@ -1,30 +1,41 @@
 @media (max-width: 900px) {
   #signup-form-main-div {
-    min-width: 80vw;
+    width: 80vw;
   }
 }
 
 @media (min-width: 900px) and (max-width: 1400px) {
   #signup-form-main-div {
-    min-width: 600px;
+    width: 600px;
   }
 }
 
 @media (min-width: 1400px) and (max-width: 2000px) {
   #signup-form-main-div {
-    min-width: 700px;
+    width: 700px;
   }
 }
 
-
 @media (min-width: 2000px) {
   #signup-form-main-div {
-    min-width: 800px;
+    width: 800px;
   }
+}
+
+#sign-up {
+  background-color: var(--milk-white);
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding: 40px 0px;
+}
+
+#sign-up::-webkit-scrollbar {
+  display: none;
 }
 
 .signup-label {
   margin-bottom: 5px;
+  font-size: 14px;
 }
 
 #signup-modal-profile-img .css-10d30g3-MuiPaper-root-MuiDialog-paper {
@@ -49,13 +60,14 @@
   justify-content: center;
 }
 #signup-modal-selected-profile-img {
-  background-color: var(--milk-white);
+  background-color: var(--canary-yellow);
   border-radius: 50px;
-  border: 1.5px solid var(--honey-yellow);
+  border: 1.5px solid var(--caramel-brown);
   filter: drop-shadow(0px 0px 5px #9c9c9c6e);
 }
 #signup-modal-selected-profile-img img {
   width: 80px;
+  filter: drop-shadow(0px 0px 3px var(--honey-yellow));
 }
 
 #signup-modal-profile-img-main-div {
@@ -73,18 +85,20 @@
 }
 .signup-modal-profile-img img {
   width: 60px;
+  filter: drop-shadow(0px 0px 3px var(--honey-yellow));
 }
 
 #signup-profile-img {
   width: 50px;
   border-radius: 50px;
-  background-color: var(--milk-white);
+  background-color: var(--canary-yellow);
   border: 1.5px solid var(--caramel-brown);
   aspect-ratio: 1/1;
 }
 
 #signup-profile-img img {
   width: 100%;
+  filter: drop-shadow(0px 0px 3px var(--honey-yellow));
 }
 
 #signup-profile-btn {
@@ -94,12 +108,19 @@
 }
 
 .signup-error-text {
-  margin-bottom: 0px;
   margin-top: 3px;
-  font-size: 14px;
+  max-width: 100%;
+  white-space: wrap;
 }
 
 #signup-bio-charCount {
   font-size: 12px;
   font-weight: 500;
+  margin-bottom: 0px;
+}
+
+
+.sign-up-login-password-visibility i{
+    font-size: 13px;
+    color: var(--caramel-brown)
 }

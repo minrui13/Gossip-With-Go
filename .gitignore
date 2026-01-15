@@ -1,3 +1,4 @@
 .env
 node_modules
-database.sql
+createDatabase.sql
+insertDatabase.sql
