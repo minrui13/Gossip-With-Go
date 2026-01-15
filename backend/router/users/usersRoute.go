@@ -46,7 +46,7 @@ func (h *Handler) Router(r *mux.Router) *mux.Router {
 // Get user all user
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	rows, err := h.db.Query(ctx, `SELECT user_id, username, display_name, bio, image_id, points, created_date FROM users`)
+	rows, err := h.db.Query(ctx, `SELECT u.user_id, u.username, u.display_name, u.bio, u.created_date, pi.image_name FROM users u LEFT JOIN profile_image pi on u.image_id = pi.image_id`)
 
 	//database error 500 status code
 	//same as res.send(500)
@@ -60,8 +60,8 @@ func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		var user types.User
 		var created time.Time
 
-		if err := rows.Scan(&user.User_id, &user.Username, &user.DisplayName,
-			&user.Bio, &user.Image_id, &user.Points, &created); err != nil {
+		if err := rows.Scan(&user.UserId, &user.Username, &user.DisplayName,
+			&user.Bio, &created, &user.ImageName); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -104,20 +104,18 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 
 	//get data from db
 	err = h.db.QueryRow(ctx, `
-		SELECT user_id, username, display_name, bio, image_id, points, created_date
-		FROM users
+		SELECT u.user_id, u.username, u.display_name, u.bio, u.created_date, pi.image_name
+		FROM users u INNER JOIN profile_image pi on u.image_id = pi.image_id 
 		WHERE user_id = $1
 	`, userID).Scan(
-		&user.User_id,
+		&user.UserId,
 		&user.Username,
 		&user.DisplayName,
 		&user.Bio,
-		&user.Image_id,
-		&user.Points,
 		&created,
+		&user.ImageName,
 	)
 
-	println(err)
 	if err != nil {
 		util.WriteError(w, http.StatusNotFound, err)
 		return
@@ -126,6 +124,7 @@ func (h *Handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 	util.WriteJSON(w, http.StatusOK, user)
 }
 
+// check user exists return true false
 func (h *Handler) userExists(ctx context.Context, username string) (bool, error) {
 	var exists bool
 	err := h.db.QueryRow(
@@ -174,9 +173,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.db.QueryRow(ctx, `SELECT user_id, username, display_name, bio, image_id, points, created_date, password FROM users WHERE username = $1`, payload.Username).
-		Scan(&result.User_id, &result.Username, &result.DisplayName, &result.Bio, &result.Image_id, &result.Points, &created, &result.Password)
-
+	err = h.db.QueryRow(ctx,
+		`SELECT u.user_id, u.username, u.display_name, u.bio, u.created_date, u.password, pi.image_name 
+		FROM users u 
+		INNER JOIN profile_image pi on u.image_id = pi.image_id 
+		WHERE username = $1`, payload.Username,
+	).
+		Scan(&result.UserId, &result.Username, &result.DisplayName, &result.Bio, &created, &result.Password, &result.ImageName)
 	if errors.Is(err, sql.ErrNoRows) || !auth.ComparePasswords(result.Password, []byte(payload.Password)) {
 		util.WriteError(w, http.StatusBadRequest, fmt.Errorf("Invalid username or password"))
 		return
@@ -188,7 +191,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jwtUser := types.JWTUserInfo{
-		User_id: result.User_id,
+		UserId: result.UserId,
 	}
 	//get JWT secret from .env
 	secret := []byte(config.Envs.JWTSecret)
@@ -201,14 +204,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	loginInfo := types.LoginInfo{
-		User_id:      result.User_id,
-		Username:     result.Username,
-		DisplayName:  result.DisplayName,
-		Bio:          result.Bio,
-		Image_id:     result.Image_id,
-		Points:       result.Points,
-		Created_date: result.Created_date,
-		Token:        token,
+		UserId:      result.UserId,
+		Username:    result.Username,
+		DisplayName: result.DisplayName,
+		Bio:         result.Bio,
+		ImageName:   result.ImageName,
+		CreatedDate: result.CreatedDate,
+		Token:       token,
 	}
 
 	//pass token to frontend to store in local storage
@@ -238,7 +240,7 @@ func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	err = h.db.QueryRow(ctx,
 		`INSERT INTO users (image_id, username, display_name, bio, password) VALUES ($1, $2, $3, $4, $5) RETURNING  user_id;`,
-		payload.Image_id, payload.Username, payload.DisplayName, payload.Bio, hashedPassword,
+		payload.ImageId, payload.Username, payload.DisplayName, payload.Bio, hashedPassword,
 	).Scan(&userID)
 
 	if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
@@ -284,8 +286,8 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	err := h.db.QueryRow(ctx,
 		`UPDATE users SET username = $1, display_name = $2, bio = $3, image_id = $4, password = $5
 		WHERE user_id = $6 RETURNING user_id, username, display_name, bio, image_id;`,
-		payload.Username, payload.DisplayName, payload.Bio, payload.Image_id, hashedPassword, payload.User_id,
-	).Scan(&result.User_id, &result.Username, &result.DisplayName, &result.Bio, &result.Image_id)
+		payload.Username, payload.DisplayName, payload.Bio, payload.ImageId, hashedPassword, payload.UserId,
+	).Scan(&result.UserId, &result.Username, &result.DisplayName, &result.Bio, &result.ImageId)
 
 	if err != nil {
 		// username duplicate

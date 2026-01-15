@@ -7,8 +7,9 @@ import React, {
   useState,
 } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { AuthContextType, AuthProviderType } from "../types/AuthType";
+import { AuthContextType, AuthProviderType, SignInPayload } from "../types/AuthType";
 import { mainAxios } from "../api";
+import { getUserById } from "../api/userApi";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -51,50 +52,33 @@ export const AuthProvider = ({ children }: AuthProviderType) => {
         },
       });
 
-      const userInfo = await mainAxios.post(
-        `/users/${tokenPayload.data.user_id}`,
-        "",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      var userData = userInfo.data;
-      //get image name from image id
-      const imageData = await mainAxios.post(
-        `/images/${userData.image_id}`,
-        "",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      //put the image name into the json
-      userData.image_name = imageData.data.image_name;
+      const userInfo = await getUserById({
+        user_id: tokenPayload.data.user_id,
+        token: token
+      });
+
+      var userData = userInfo;
+  
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
     } catch (error) {
-      localStorage.removeItem("token");
+      localStorage.clear();
       setUser(null);
     } finally {
       setIsAuthLoading(false);
     }
   }
 
-  async function signIn(username: string) {
+  async function signIn(payload:SignInPayload) {
     try {
       setIsAuthLoading(true);
-      const response = await mainAxios.post(`/users/login`, {
-        username: username,
-      });
+      const response = await mainAxios.post(`/users/login`, payload);
       localStorage.setItem("token", response.data.token);
       await verifyToken();
       setIsAuthLoading(false);
       return response.data;
     } catch (error) {
-      localStorage.removeItem("token");
+      localStorage.clear();
       setUser(null);
       throw error;
     }
