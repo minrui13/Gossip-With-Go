@@ -1,7 +1,7 @@
 import { IconButton, InputAdornment, TextField } from "@mui/material";
 import BuzzBeeLogo from "../images/BuzzBee_Logo.PNG";
 import Loading from "../components/Loading";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../css/signup.css";
 import Modal from "../components/Modal";
 import { toast } from "react-toastify";
@@ -19,6 +19,8 @@ export default function SignUp() {
     /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{0,17}$/;
   //all characters that are allowed
   const passwordAllowedRegex = /^[A-Za-z\d!@#$%^&*]{0,17}$/;
+  //is Password ok for confirm password to show
+  const [checkPassword, setCheckPassword] = useState(false);
   //get available Profile image from database
   const [profileImgArr, setProfileImgArr] = useState<ProfileImageType[]>([]);
   //sign up inputs and error
@@ -52,7 +54,13 @@ export default function SignUp() {
     confirm_password: false,
   });
 
+  const form = useRef<HTMLDivElement | null>(null)
+
   useEffect(() => {
+    if(form?.current){
+        form.current.classList.add('signup-login-form-main-div-reset')
+    }
+  
     getProfileImage();
   }, []);
 
@@ -197,7 +205,7 @@ export default function SignUp() {
         }
       />
       <div className="d-flex align-items-center justify-content-center signup-login-form-container">
-        <div className="signup-login-form-main-div" id="signup-form-main-div">
+        <div className="signup-login-form-main-div" id="signup-form-main-div" ref={form}>
           <h1 className="signup-login-title">
             Sign Up <img src={BuzzBeeLogo} className="signup-login-logo-img" />
           </h1>
@@ -540,6 +548,7 @@ export default function SignUp() {
                     },
                   }}
                   onChange={(e) => {
+                    //on change - strictly dont set password if the below conditions happens
                     const value = e.target.value;
                     if (!passwordAllowedRegex.test(value)) {
                       setInputError((prev) => ({
@@ -563,11 +572,18 @@ export default function SignUp() {
                     }
                   }}
                   onBlur={() => {
+                    //on blur - set password but display error if the below conditions happens
+                    //check if sign up is less 8 character
                     if (signUpInput.password.trim().length < 8) {
                       setInputError((prev) => ({
                         ...prev,
                         password: "Password must be more than 8 characters",
                       }));
+                       setSignUpInput((prev) => ({
+                        ...prev,
+                        confirm_password: "",
+                      }));
+                      setCheckPassword(false);
                     } else if (
                       !passwordRequirementRegex.test(signUpInput.password)
                     ) {
@@ -577,11 +593,19 @@ export default function SignUp() {
                           uppercase, 1 digit, 1 special character (!@#$%^&*) and
                           no whitespace.`,
                       }));
+                      //reset confirm password
+                       setSignUpInput((prev) => ({
+                        ...prev,
+                        confirm_password: "",
+                      }));
+                      //dont let user confirm password
+                      setCheckPassword(false);
                     } else {
                       setInputError((prev) => ({
                         ...prev,
                         password: "",
                       }));
+                      setCheckPassword(true);
                     }
                   }}
                   sx={{
@@ -624,127 +648,132 @@ export default function SignUp() {
                   </p>
                 )}
               </div>
-              {/*Confirm Password*/}
-              <div className="mt-2">
-                <p className="signup-label signup-login-label">
-                  Confirm Password:{" "}
-                </p>
-                <TextField
-                  type={showPassword.confirm_password ? "text" : "password"}
-                  size="small"
-                  value={signUpInput.confirm_password}
-                  disabled={
-                    isLoading ||
-                    inputError.password.trim().length > 0 ||
-                    signUpInput.password.trim().length == 0
-                  }
-                  slotProps={{
-                    input: {
-                      //Add eye button to toglle visibility
-                      endAdornment: (
-                        <InputAdornment
-                          position="end"
-                          style={{ marginRight: 10, cursor: "pointer" }}
-                        >
-                          <IconButton
-                            disabled={
-                              isLoading ||
-                              inputError.password.trim().length > 0 ||
-                              signUpInput.password.trim().length == 0
-                            }
-                            className="sign-up-login-password-visibility"
-                            onClick={() => {
-                              setShowPassword((prev) => ({
-                                ...prev,
-                                confirm_password: !prev.confirm_password,
-                              }));
-                            }}
-                            edge="end"
-                          >
-                            <i
-                              className={
-                                showPassword.confirm_password
-                                  ? `fa-solid fa-eye`
-                                  : `fa-solid fa-eye-slash`
-                              }
-                            ></i>
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    var regex = /^[A-Za-z\d!@#$%^&*]{0,17}$/;
-                    if (!regex.test(value)) {
-                      setInputError((prev) => ({
-                        ...prev,
-                        confirm_password: "Character not allowed",
-                      }));
-                    } else {
-                      setInputError((prev) => ({
-                        ...prev,
-                        confirm_password: "",
-                      }));
-                      setSignUpInput((prev) => ({
-                        ...prev,
-                        confirm_password: value,
-                      }));
-                    }
-                  }}
-                  onBlur={() => {
-                    if (signUpInput.confirm_password !== signUpInput.password) {
-                      setInputError((prev) => ({
-                        ...prev,
-                        confirm_password: "Password does not match",
-                      }));
-                    } else {
-                      setInputError((prev) => ({
-                        ...prev,
-                        confirm_password: "",
-                      }));
-                    }
-                  }}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      fontFamily: "Segoe UI",
-                      fontSize: " 14.5px",
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor:
-                          inputError.confirm_password.trim().length > 0
-                            ? "var(--oak-red)"
-                            : "#43434239",
-                        borderWidth:
-                          inputError.confirm_password.trim().length > 0
-                            ? "2px"
-                            : "1.5px",
-                      },
-                      "&.Mui-focused": {
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor:
-                            inputError.confirm_password.trim().length > 0
-                              ? "var(--oak-red)"
-                              : "var(--caramel-brown)",
-                        },
-                      },
-                      "&:hover:not(.Mui-focused)": {
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor:
-                            inputError.confirm_password.trim().length > 0
-                              ? "var(--oak-red)"
-                              : "#8e4f2d69",
-                        },
-                      },
-                    },
-                  }}
-                  fullWidth
-                />
-                {inputError.confirm_password.trim().length > 0 && (
-                  <p className="signup-login-error-text signup-error-text">
-                    {inputError.confirm_password}
+              {/*Confirm Password
+              - only show confirm password if password meets requirement */}
+              {checkPassword && (
+                <div className="mt-2">
+                  <p className="signup-label signup-login-label">
+                    Confirm Password:{" "}
                   </p>
-                )}
-              </div>
+                  <TextField
+                    type={showPassword.confirm_password ? "text" : "password"}
+                    size="small"
+                    value={signUpInput.confirm_password}
+                    disabled={
+                      isLoading ||
+                      inputError.password.trim().length > 0 ||
+                      signUpInput.password.trim().length == 0
+                    }
+                    slotProps={{
+                      input: {
+                        //Add eye button to toglle visibility
+                        endAdornment: (
+                          <InputAdornment
+                            position="end"
+                            style={{ marginRight: 10, cursor: "pointer" }}
+                          >
+                            <IconButton
+                              disabled={
+                                isLoading ||
+                                inputError.password.trim().length > 0 ||
+                                signUpInput.password.trim().length == 0
+                              }
+                              className="sign-up-login-password-visibility"
+                              onClick={() => {
+                                setShowPassword((prev) => ({
+                                  ...prev,
+                                  confirm_password: !prev.confirm_password,
+                                }));
+                              }}
+                              edge="end"
+                            >
+                              <i
+                                className={
+                                  showPassword.confirm_password
+                                    ? `fa-solid fa-eye`
+                                    : `fa-solid fa-eye-slash`
+                                }
+                              ></i>
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      var regex = /^[A-Za-z\d!@#$%^&*]{0,17}$/;
+                      if (!regex.test(value)) {
+                        setInputError((prev) => ({
+                          ...prev,
+                          confirm_password: "Character not allowed",
+                        }));
+                      } else {
+                        setInputError((prev) => ({
+                          ...prev,
+                          confirm_password: "",
+                        }));
+                        setSignUpInput((prev) => ({
+                          ...prev,
+                          confirm_password: value,
+                        }));
+                      }
+                    }}
+                    onBlur={() => {
+                      if (
+                        signUpInput.confirm_password !== signUpInput.password
+                      ) {
+                        setInputError((prev) => ({
+                          ...prev,
+                          confirm_password: "Password does not match",
+                        }));
+                      } else {
+                        setInputError((prev) => ({
+                          ...prev,
+                          confirm_password: "",
+                        }));
+                      }
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        fontFamily: "Segoe UI",
+                        fontSize: " 14.5px",
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor:
+                            inputError.confirm_password.trim().length > 0
+                              ? "var(--oak-red)"
+                              : "#43434239",
+                          borderWidth:
+                            inputError.confirm_password.trim().length > 0
+                              ? "2px"
+                              : "1.5px",
+                        },
+                        "&.Mui-focused": {
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor:
+                              inputError.confirm_password.trim().length > 0
+                                ? "var(--oak-red)"
+                                : "var(--caramel-brown)",
+                          },
+                        },
+                        "&:hover:not(.Mui-focused)": {
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor:
+                              inputError.confirm_password.trim().length > 0
+                                ? "var(--oak-red)"
+                                : "#8e4f2d69",
+                          },
+                        },
+                      },
+                    }}
+                    fullWidth
+                  />
+                  {inputError.confirm_password.trim().length > 0 && (
+                    <p className="signup-login-error-text signup-error-text">
+                      {inputError.confirm_password}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             <div style={{ width: "100%", marginTop: 25 }}>
               <button
