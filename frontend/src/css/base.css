@@ -18,6 +18,9 @@
   --tin-gray: #cccdc7;
   --blue-gray: #5f7f97;
   --toastify-color-success: #ffc03b;
+  --warm-gray: #d8d4c8; 
+  --stone-gray: #bdb6a8; 
+  --ash-brown: #9a9387; 
 }
 
 h1,
@@ -30,8 +33,14 @@ h5 {
 
 p,
 button,
-label {
+label,
+span {
   font-family: "Segoe UI";
+}
+
+button {
+  transition: color 0.2s cubic-bezier(0, -0.03, 0.2, 0.99);
+  transition: background-color 0.2s cubic-bezier(0, -0.03, 0.2, 0.99);
 }
 
 .zoom-in {
@@ -43,7 +52,14 @@ label {
   transform: scale(1.05);
 }
 
+.fade-out {
+  opacity: 0;
+}
+
 .Toastify__toast {
   font-size: 13px;
 }
 
+::-webkit-scrollbar {
+  display: none; /* Hides the scrollbar */
+}

@@ -1,8 +1,8 @@
 .nav-container {
-    background-color: var(--honey-yellow);
-    max-height: 56px;
-    border-bottom: 2px solid var(--wood-brown);
-    filter: 0px 0px 10px rgba(5, 5, 5, 0.632)
+  background-color: var(--honey-yellow);
+  max-height: 60px;
+  border-bottom: 2px solid var(--wood-brown);
+  filter: 0px 0px 10px rgba(5, 5, 5, 0.632);
 }
 
 .css-1tlcqt-MuiAutocomplete-root .MuiOutlinedInput-root {
@@ -40,8 +40,7 @@
   background-color: var(--wood-brown);
 }
 
-
-.nav-create-dropdown .dropdown-toggle::after {
+.nav-dropdown .dropdown-toggle::after {
   display: none;
 }
 
@@ -49,7 +48,7 @@
   color: var(--wood-brown);
 }
 
-.nav-create-dropdown .dropdown-menu {
+.nav-dropdown .dropdown-menu {
   padding: 0px 0px;
   font-size: 14px;
   max-width: 100px;
@@ -58,7 +57,7 @@
   background-color: var(--wood-brown);
 }
 
-.nav-create-dropdown .dropdown-item {
+.nav-dropdown .dropdown-item {
   width: 100%;
   padding: 8px 5px;
   text-align: center;
@@ -70,21 +69,94 @@
   background-color: var(--milk-white);
 }
 
-.nav-create-dropdown .dropdown-item:hover {
+.nav-dropdown .dropdown-item:hover {
   background-color: var(--wood-brown);
   color: var(--milk-white);
+}
+
+
+.nav-profile-dropdown .dropdown-menu {
+ left: -15px
+}
+
+#nav-profile-dropdown-logout-img {
+    width: 30px
+}
+
+
+.nav-profile-dropdown .dropdown-toggle {
+    padding: 0;
+}
+
+
+.nav-search-list {
+  padding: 0px;
+  margin-left: 0px;
+}
+
+.nav-search-value {
+  margin: 0px 0px 0px 0px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 450;
+  font-size: 14px;
+  font-weight: thick;
+  color: var(--wood-brown);
+  display: inline;
+}
+
+.nav-search-list-value-chip {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background-color: var(--canary-yellow);
+}
+
+.nav-search-list-textfield .MuiAutocomplete-tag {
+  max-width: 200px !important;
+}
+
+.nav-search-list-title {
+  font-weight: 700;
+  color: var(--wood-brown);
+  margin: 0px 0px 5px 20px;
+  text-decoration: underline;
+  font-size: 15px;
+}
+
+
+
+.nav-search-list-item {
+  color: var(--wood-brown);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+
+.nav-search-list-item:hover{
+    background-color: var(--canary-yellow);
+}
+
+.nav-search-list-item p {
+  padding: 5px 0px 5px 20px;
+  margin: 0px;
+  font-size: 14.5px;
 }
 
 .nav-profile-div {
   border-radius: 50px;
   width: 45px;
+  padding: 2px;
   background-color: var(--milk-white);
   aspect-ratio: 1/1;
 }
-
 .nav-profile-img {
   border-radius: 50px;
   width: 100%;
   aspect-ratio: 1/1;
   object-fit: contain;
+   filter: drop-shadow(0px 0px 5px var(--honey-yellow));
 }
