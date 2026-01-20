@@ -1,23 +1,21 @@
 import { mainAxios } from ".";
 import {
+  CursorPostDefault,
+  CursorPostDefaultSumVote,
+  IDLimitCursorSearch,
+  IDLimitCursorSearchToken,
   PostDefaultResultType,
-  PostPopularityFollowResultType,
 } from "../types/PostType";
-import {
-    IDLimitOffsetSearch,
-  IDLimitOffsetToken,
-  IDLimitOffsetTokenSearch,
-} from "../types/UtilsType";
 
 // Get post By popularity and searching
 export const getPostsByPopularityAndSearch = (
-  payload: IDLimitOffsetSearch
-): Promise<PostPopularityFollowResultType[]> => {
+  payload: IDLimitCursorSearch,
+): Promise<CursorPostDefault> => {
   return new Promise(async (resolve, reject) => {
     try {
       const result = await mainAxios.post(
-        `/posts/allPostsByFilter/${payload.user_id}?limit=${payload.limit}&offset=${payload.offset}&search=${payload.search}`,
-       {}
+        `/posts/allPostsByFilter/${payload.user_id}?limit=${payload.limit}&search=${payload.search}${payload.cursor ? `&cursor=${payload.cursor}` : ""}`,
+        {},
       );
       resolve(result.data);
     } catch (error) {
@@ -30,18 +28,18 @@ export const getPostsByPopularityAndSearch = (
 // get posts from topics that are under same categories of the topics user follows as well as the most popular posts
 // only if user folllows topics with limits
 export const getPostsByFollowAndPopularity = (
-  payload: IDLimitOffsetToken
-): Promise<PostPopularityFollowResultType[]> => {
+  payload: IDLimitCursorSearchToken,
+): Promise<CursorPostDefaultSumVote> => {
   return new Promise(async (resolve, reject) => {
     try {
       const result = await mainAxios.post(
-        `/posts/getPostsByPopularityAndFollow/${payload.user_id}?limit=${payload.limit}&offset=${payload.offset}`,
+        `/posts/getPostsByPopularityAndFollow/${payload.user_id}?limit=${payload.limit}${payload.cursor ? `&cursor=${payload.cursor}` : ""}`,
         {},
         {
           headers: {
             Authorization: `Bearer ${payload.token}`,
           },
-        }
+        },
       );
       resolve(result.data);
     } catch (error) {
@@ -51,7 +49,7 @@ export const getPostsByFollowAndPopularity = (
 };
 
 export const getPostsByFollow = (
-  payload: IDLimitOffsetToken
+  payload: IDLimitCursorSearchToken,
 ): Promise<PostDefaultResultType[]> => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -64,7 +62,7 @@ export const getPostsByFollow = (
           headers: {
             Authorization: `Bearer ${payload.token}`,
           },
-        }
+        },
       );
       resolve(result.data);
     } catch (error) {
