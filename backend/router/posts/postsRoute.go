@@ -88,10 +88,10 @@ func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 		p.content, 
 		p.created_date,
 		pvv.post_vote_id as vote_id,
-		COALESCE(SUM(CASE WHEN pv.vote_type = 1 THEN 1 ELSE 0 END), 0) AS num_of_upvotes,
-		COALESCE(SUM(CASE WHEN pv.vote_type = 0 THEN 1 ELSE 0 END), 0) AS num_of_downvotes,
+		COALESCE(pv.num_of_upvotes, 0) as num_of_upvotes,
+		COALESCE(pv.num_of_downvotes, 0) as num_of_downvotes,
 		COALESCE(pvv.vote_type, 0) AS vote_status,
-		COALESCE(COUNT(DISTINCT pc.comment_id), 0) AS num_comments,
+		COALESCE(pc.num_of_comments, 0) AS num_comments,
 		pb.post_bookmark_id as bookmark_id, 
 		CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked
 		FROM posts p 
@@ -100,12 +100,24 @@ func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 		INNER JOIN profile_image i ON u.image_id = i.image_id
 		INNER JOIN topics t ON t.topic_id = p.topic_id
 		INNER JOIN categories c ON t.category_id = c.category_id
-		LEFT JOIN posts_votes pv ON p.post_id = pv.post_id 
+		LEFT JOIN (
+      SELECT post_id, 
+      COUNT(post_vote_id) FILTER (WHERE vote_type = 1) as num_of_upvotes,
+      COUNT(post_vote_id) FILTER (WHERE vote_type = -1) as num_of_downvotes 
+      FROM posts_votes
+      GROUP BY post_id
+    ) pv ON p.post_id = pv.post_id 
 		LEFT JOIN posts_votes pvv ON p.post_id = pvv.post_id AND pvv.user_id = $1
-		LEFT JOIN posts_comments pc ON pc.post_id = p.post_id
+		LEFT JOIN (
+      SELECT post_id,
+      COUNT(comment_id) as num_of_comments 
+      FROM posts_comments
+      GROUP BY post_id
+    ) pc ON pc.post_id = p.post_id
 		LEFT JOIN posts_bookmarks pb ON pb.post_id = p.post_id AND pb.user_id = $1
 		WHERE LOWER(p.title) LIKE $2
-		GROUP BY p.post_id, u.user_id, u.username, i.image_name, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id
+		GROUP BY p.post_id, u.user_id, u.username, i.image_name, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
+    pv.num_of_downvotes, pc.num_of_comments
 		ORDER BY p.created_date DESC, num_of_upvotes DESC
 		LIMIT $3 OFFSET $4
 		`, userID, search, limitQuery, offsetQuery,
@@ -181,10 +193,10 @@ func (h *Handler) GetPostById(w http.ResponseWriter, r *http.Request) {
 		p.content, 
 		p.created_date,
 		pvv.post_vote_id as vote_id,
-		COALESCE(SUM(CASE WHEN pv.vote_type = 1 THEN 1 ELSE 0 END), 0) AS num_of_upvotes,
-		COALESCE(SUM(CASE WHEN pv.vote_type = 0 THEN 1 ELSE 0 END), 0) AS num_of_downvotes,
+		COALESCE(pv.num_of_upvotes, 0) as num_of_upvotes,
+		COALESCE(pv.num_of_downvotes, 0) as num_of_downvotes,
 		COALESCE(pvv.vote_type, 0) AS vote_status,
-		COALESCE(COUNT(DISTINCT pc.comment_id), 0) AS num_comments,
+		COALESCE(pc.num_of_comments, 0) AS num_comments,
 		pb.post_bookmark_id as bookmark_id, 
 		CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked
 		FROM posts p
@@ -193,12 +205,24 @@ func (h *Handler) GetPostById(w http.ResponseWriter, r *http.Request) {
 		INNER JOIN profile_image i ON u.image_id = i.image_id
 		INNER JOIN categories c ON t.category_id = c.category_id
 		LEFT JOIN tags ON tags.tag_id = p.tag_id
-		LEFT JOIN posts_votes pv ON p.post_id = pv.post_id 
+		LEFT JOIN (
+		SELECT post_id, 
+		COUNT(post_vote_id) FILTER (WHERE vote_type = 1) as num_of_upvotes,
+		COUNT(post_vote_id) FILTER (WHERE vote_type = -1) as num_of_downvotes 
+		FROM posts_votes
+		GROUP BY post_id
+		) pv ON p.post_id = pv.post_id 
 		LEFT JOIN posts_votes pvv ON p.post_id = pvv.post_id AND pvv.user_id = $1
-		LEFT JOIN posts_comments pc ON pc.post_id = p.post_id
+		LEFT JOIN (
+		SELECT post_id,
+		COUNT(comment_id) as num_of_comments 
+		FROM posts_comments
+		GROUP BY post_id
+		) pc ON pc.post_id = p.post_id
 		LEFT JOIN posts_bookmarks pb ON pb.post_id = p.post_id AND pb.user_id = $1
 		WHERE p.post_id = $2
-		GROUP BY p.post_id, u.username, u.user_id, i.image_name, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id
+		GROUP BY p.post_id, u.username, u.user_id, i.image_name, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
+    pv.num_of_downvotes, pc.num_of_comments
 		ORDER BY p.created_date DESC`,
 		userIDInt, postIDInt).
 		Scan(&post.Post_ID, &post.User_ID, &post.Username, &post.User_Image, &post.Topic_Name, &post.Category_Icon, &post.Tag_Name, &post.Tag_Icon, &post.Tag_Description,
@@ -278,11 +302,11 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 				p.content,
 				p.created_date,
 				pvv.post_vote_id as vote_id,
-				COALESCE(SUM(CASE WHEN pv.vote_type = 1 THEN 1 ELSE 0 END), 0) AS num_of_upvotes,
-				COALESCE(SUM(CASE WHEN pv.vote_type = 0 THEN 1 ELSE 0 END), 0) AS num_of_downvotes,
+				COALESCE(pv.num_of_upvotes, 0) as num_of_upvotes,
+				COALESCE(pv.num_of_downvotes, 0) as num_of_downvotes,
 				0::INT AS sum_of_votes,
 				COALESCE(pvv.vote_type, 0) AS vote_status,
-				COALESCE(COUNT(DISTINCT pc.comment_id), 0) AS num_comments,
+				COALESCE(pc.num_of_comments, 0) AS num_comments,
 				pb.post_bookmark_id as bookmark_id,
 				CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked
 				FROM posts p
@@ -292,12 +316,23 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 				INNER JOIN categories c ON t.category_id = c.category_id
 				INNER JOIN topics_followers tf ON tf.topic_id = t.topic_id
 				LEFT JOIN tags ON tags.tag_id = p.tag_id
-				LEFT JOIN posts_votes pv ON p.post_id = pv.post_id 
-				LEFT JOIN posts_votes pvv ON pvv.post_id = p.post_id AND pvv.user_id = $1
-				LEFT JOIN posts_comments pc ON pc.post_id = p.post_id
+				LEFT JOIN (
+					SELECT post_id, 
+					COUNT(post_vote_id) FILTER (WHERE vote_type = 1) as num_of_upvotes,
+					COUNT(post_vote_id) FILTER (WHERE vote_type = -1) as num_of_downvotes 
+					FROM posts_votes
+					GROUP BY post_id
+    		) pv ON p.post_id = pv.post_id 
+				LEFT JOIN posts_votes pvv ON p.post_id = pvv.post_id AND pvv.user_id = $1
+				LEFT JOIN (
+					SELECT post_id,
+					COUNT(comment_id) as num_of_comments 
+					FROM posts_comments
+					GROUP BY post_id
+				) pc ON pc.post_id = p.post_id
 				LEFT JOIN posts_bookmarks pb ON pb.post_id = p.post_id AND pb.user_id = $1
 				WHERE tf.user_id = $1
-        		GROUP BY p.post_id, u.user_id, u.username, i.image_name, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id
+				GROUP BY p.post_id, u.user_id, u.username, i.image_name, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes, pv.num_of_downvotes, pc.num_of_comments
     		UNION
 			SELECT
 				p.post_id,
@@ -313,11 +348,11 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 				p.content,
 				p.created_date,
 				pvv.post_vote_id as vote_id,
-				COALESCE(SUM(CASE WHEN pv.vote_type = 1 THEN 1 ELSE 0 END), 0) AS num_of_upvotes,
-				COALESCE(SUM(CASE WHEN pv.vote_type = 0 THEN 1 ELSE 0 END), 0) AS num_of_downvotes,
-				COALESCE(SUM(pv.vote_type), 0) AS sum_of_votes,
+				COALESCE(pv.num_of_upvotes, 0) as num_of_upvotes,
+				COALESCE(pv.num_of_downvotes, 0) as num_of_downvotes,
+				COALESCE(pv.sum_of_votes, 0) AS sum_of_votes,
 				COALESCE(pvv.vote_type, 0) AS vote_status,
-				COALESCE(COUNT(DISTINCT pc.comment_id), 0) AS num_comments,
+				COALESCE(pc.num_of_comments, 0) AS num_comments,
 				pb.post_bookmark_id as bookmark_id,
 				CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked
 				FROM posts p
@@ -325,13 +360,25 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 				INNER JOIN profile_image i ON u.image_id = i.image_id
 				INNER JOIN topics t ON p.topic_id = t.topic_id
 				INNER JOIN categories c ON t.category_id = c.category_id
-				LEFT JOIN posts_votes pv ON pv.post_id = p.post_id
-				LEFT JOIN posts_votes pvv ON pvv.post_id = p.post_id AND pvv.user_id = $1
+				LEFT JOIN (
+					SELECT post_id, 
+					COUNT(post_vote_id) FILTER (WHERE vote_type = 1) as num_of_upvotes,
+					COUNT(post_vote_id) FILTER (WHERE vote_type = -1) as num_of_downvotes,
+					SUM(vote_type) as sum_of_votes 
+					FROM posts_votes
+					GROUP BY post_id
+				) pv ON p.post_id = pv.post_id 
+				LEFT JOIN posts_votes pvv ON p.post_id = pvv.post_id AND pvv.user_id = $1
+				LEFT JOIN (
+					SELECT post_id,
+					COUNT(comment_id) as num_of_comments 
+					FROM posts_comments
+					GROUP BY post_id
+				) pc ON pc.post_id = p.post_id
 				LEFT JOIN tags ON tags.tag_id = p.tag_id
-				LEFT JOIN posts_comments pc ON pc.post_id = p.post_id
 				LEFT JOIN posts_bookmarks pb ON pb.post_id = p.post_id AND pb.user_id = $1
 				WHERE t.visibility = 'public'
-				GROUP BY p.post_id, u.user_id, u.username, t.topic_name, i.image_name, c.icon_name,tags.tag_name, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, tag_icon, tag_description
+				GROUP BY p.post_id, u.user_id, u.username, t.topic_name, i.image_name, c.icon_name,tags.tag_name, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, tag_icon, tag_description, pv.num_of_upvotes, pv.num_of_downvotes, pc.num_of_comments, pv.sum_of_votes
 		) main_feed_post
 		ORDER BY created_date DESC, sum_of_votes DESC
 		LIMIT $2 OFFSET $3
