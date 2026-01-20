@@ -11,3 +11,16 @@ type VoteDefault struct {
 	Vote_Type   int `json:"vote_type"`
 	Edited_Date int `json:"edited_date"`
 }
+
+type VoteIDPayload struct {
+	Vote_ID int `json:"vote_id"`
+}
+
+type Vote struct {
+	Vote_ID int `json:"vote_id"`
+}
+
+type VoteCountResult struct {
+	Upvote_Count   int `json:"upvote_count"`
+	Downvote_Count int `json:"downvote_count"`
+}
