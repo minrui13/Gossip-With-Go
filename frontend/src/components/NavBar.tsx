@@ -23,6 +23,7 @@ import { toast } from "react-toastify";
 import BuzzBeeLogout from "../images/BuzzBeeLogout.PNG";
 
 export default function NavBar() {
+  const navigate = useNavigate();
   const { user, isAuthLoading, verifyToken, signOut } = useAuth();
   //options for Autocomplete to find topics/posts
   const [searchOptionsArr, setSearchOptionsArr] = useState<NavSearchOptions[]>(
@@ -79,9 +80,9 @@ export default function NavBar() {
         }),
         await getPostsByPopularityAndSearch({
           limit: LIMIT,
-          offset: OFFSET,
           search: search.toLowerCase(),
           user_id: 0,
+          cursor: null,
         }),
       ]);
       setSearchTopicsArr(topicsResponse);
@@ -91,7 +92,7 @@ export default function NavBar() {
           title: t.topic_name,
           type: "Topic",
         })),
-        ...postsResponse.map((p) => ({
+        ...postsResponse.result.map((p) => ({
           id: p.post_id,
           title: p.title,
           type: "Post",
@@ -101,15 +102,18 @@ export default function NavBar() {
   }
 
   function handleSignOut() {
-    let seconds = 3;
-
     toast.success(`Signing out...`, {
-      autoClose: 5000,
+      autoClose: 3000,
     });
 
     setTimeout(() => {
       signOut();
-    }, 5000);
+      if (window.location.pathname == "/") {
+        window.location.reload();
+      } else {
+        navigate("/");
+      }
+    }, 3000);
   }
 
   return (
@@ -391,9 +395,9 @@ export default function NavBar() {
                       slotProps={{
                         tooltip: {
                           sx: {
-                            backgroundColor: 'var(--canary-yellow)',
-                            color: 'var(--caramel-brown)',
-                            fontFamily: 'Segoe UI',
+                            backgroundColor: "var(--canary-yellow)",
+                            color: "var(--caramel-brown)",
+                            fontFamily: "Segoe UI",
                           },
                         },
                       }}
