@@ -1,10 +1,13 @@
 import { mainAxios } from ".";
 import {
   CursorPostDefault,
+  CursorPostDefaultIsFollowing,
   CursorPostDefaultSumVote,
   IDLimitCursorSearch,
   IDLimitCursorSearchToken,
   PostDefaultResultType,
+  PostIDUserID,
+  PostURLUserID,
 } from "../types/PostType";
 
 // Get post By popularity and searching
@@ -14,7 +17,7 @@ export const getPostsByPopularityAndSearch = (
   return new Promise(async (resolve, reject) => {
     try {
       const result = await mainAxios.post(
-        `/posts/allPostsByFilter/${payload.user_id}?limit=${payload.limit}&search=${payload.search}${payload.cursor ? `&cursor=${payload.cursor}` : ""}`,
+        `/posts/allPostsByFilter/${payload.user_id}?limit=${payload.limit}&search=${payload.search}${payload.cursor ? `&cursor=${payload.cursor}` : ""}${payload.filter ? `&sortBy=${payload.filter}` : ""}`,
         {},
       );
       resolve(result.data);
@@ -29,11 +32,11 @@ export const getPostsByPopularityAndSearch = (
 // only if user folllows topics with limits
 export const getPostsByFollowAndPopularity = (
   payload: IDLimitCursorSearchToken,
-): Promise<CursorPostDefaultSumVote> => {
+): Promise<CursorPostDefaultIsFollowing> => {
   return new Promise(async (resolve, reject) => {
     try {
       const result = await mainAxios.post(
-        `/posts/getPostsByPopularityAndFollow/${payload.user_id}?limit=${payload.limit}${payload.cursor ? `&cursor=${payload.cursor}` : ""}`,
+        `/posts/getPostsByPopularityAndFollow/${payload.user_id}?limit=${payload.limit}${payload.cursor ? `&cursor=${payload.cursor}` : ""}${payload.filter ? `&sortBy=${payload.filter}` : ""}`,
         {},
         {
           headers: {
@@ -63,6 +66,42 @@ export const getPostsByFollow = (
             Authorization: `Bearer ${payload.token}`,
           },
         },
+      );
+      resolve(result.data);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const getPostByID = (
+  payload: PostIDUserID,
+): Promise<PostDefaultResultType> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const result = await mainAxios.post(
+        `/posts/getPostByID/${payload.user_id}/${payload.post_id}`,
+        {
+          params: payload,
+        },
+        {},
+      );
+      resolve(result.data);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const getPostByURL = (
+  payload: PostURLUserID,
+): Promise<PostDefaultResultType> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const result = await mainAxios.post(
+        `/posts/getPostByURL/${payload.user_id}/${payload.post_url}`,
+        {},
+        {},
       );
       resolve(result.data);
     } catch (error) {
