@@ -1,12 +1,22 @@
 import { mainAxios } from ".";
-import { VoteCountType, VoteTypePostVote, VoteTypeUserPost } from "../types/VoteType";
+import {
+  VoteCountType,
+  VoteCountTypeVoteID,
+  VoteTypePostVote,
+  VoteTypeUserPost,
+} from "../types/VoteType";
 
-export const addPostVote = (payload: VoteTypeUserPost):Promise<number>=> {
+export const addPostVote = (payload: VoteTypeUserPost):  Promise<VoteCountTypeVoteID> => {
   return new Promise(async (resolve, reject) => {
     try {
       const result = await mainAxios.post(
         `/postVotes/addVote/${payload.user_id}/${payload.post_id}`,
         payload,
+        {
+          headers: {
+            Authorization: `Bearer ${payload.token}`,
+          },
+        },
       );
       resolve(result.data);
     } catch (error) {
@@ -15,12 +25,19 @@ export const addPostVote = (payload: VoteTypeUserPost):Promise<number>=> {
   });
 };
 
-export const updatePostVote = (payload: VoteTypePostVote):Promise<VoteCountType> => {
+export const updatePostVote = (
+  payload: VoteTypePostVote,
+): Promise<VoteCountType> => {
   return new Promise(async (resolve, reject) => {
     try {
       const result = await mainAxios.put(
         `/postVotes/updateVote/${payload.post_vote_id}`,
         payload,
+        {
+          headers: {
+            Authorization: `Bearer ${payload.token}`,
+          },
+        },
       );
       resolve(result.data);
     } catch (error) {
@@ -29,7 +46,9 @@ export const updatePostVote = (payload: VoteTypePostVote):Promise<VoteCountType>
   });
 };
 
-export const deletePostVote = (post_vote_id:number|null):Promise<VoteCountType> => {
+export const deletePostVote = (
+  post_vote_id: number | null,
+): Promise<VoteCountType> => {
   return new Promise(async (resolve, reject) => {
     try {
       const result = await mainAxios.delete(
