@@ -61,14 +61,15 @@ func (h *Handler) AddPostVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var PostVoteID int
+	var newPostVoteID int
+	postsVotes := new(types.VoteCountIDResult)
 
 	//get data from db
 	err = h.db.QueryRow(ctx,
 		`INSERT INTO posts_votes 
 		(user_id, post_id, vote_type)
 		VALUES ($1, $2, $3) RETURNING post_vote_id`,
-		userIDInt, postIDInt, payload.VoteType).Scan(&PostVoteID)
+		userIDInt, postIDInt, payload.VoteType).Scan(&newPostVoteID)
 
 	if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
 		util.WriteError(w, http.StatusConflict, pgErr)
@@ -80,7 +81,23 @@ func (h *Handler) AddPostVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	util.WriteJSON(w, http.StatusCreated, PostVoteID)
+	err = h.db.QueryRow(ctx,
+		`SELECT
+    		COUNT(post_vote_id) FILTER (WHERE vote_type = 1)  AS upvotes,
+    		COUNT(post_vote_id) FILTER (WHERE vote_type = -1) AS downvotes
+		FROM posts_votes
+		WHERE post_id = $1;
+		`,
+		postIDInt).Scan(&postsVotes.Upvote_Count, &postsVotes.Downvote_Count)
+
+	if err != nil {
+		util.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	postsVotes.Post_Vote_ID = &newPostVoteID
+
+	util.WriteJSON(w, http.StatusCreated, postsVotes)
 }
 
 // Update vote by post_vote_id

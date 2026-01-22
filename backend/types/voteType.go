@@ -24,3 +24,10 @@ type VoteCountResult struct {
 	Upvote_Count   int `json:"upvote_count"`
 	Downvote_Count int `json:"downvote_count"`
 }
+
+type VoteCountIDResult struct {
+	Upvote_Count    int  `json:"upvote_count"`
+	Downvote_Count  int  `json:"downvote_count"`
+	Post_Vote_ID    *int `json:"post_vote_id"`
+	Comment_Vote_ID *int `json:"comment_vote_id"`
+}
