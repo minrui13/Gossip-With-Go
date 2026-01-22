@@ -86,13 +86,14 @@
   filter: drop-shadow(0px 0px 50px #89898942);
   transform: translateY(-50px);
   opacity: 0;
-  transition: 0.5s opacity cubic-bezier(.22,.5,.43,.79), 0.3s transform cubic-bezier(0,2.31,.48,.14);
+  transition:
+    0.5s opacity cubic-bezier(0.22, 0.5, 0.43, 0.79),
+    0.3s transform cubic-bezier(0, 2.31, 0.48, 0.14);
 }
 
 .signup-login-form-main-div-reset {
   transform: translateX(0px) translateY(0px);
   opacity: 1;
-
 }
 
 .signup-login-logo-img {
@@ -130,10 +131,12 @@
 /*------------------------------------------------------------------*/
 /*Outlet*/
 .page-layout-outlet {
+  padding-top: 70px;
   width: 83vw;
-  height: 91vh;
-  position: absolute;
+  height: 100%;
+  position: fixed;
   right: 0%;
   bottom: 0%;
   background-color: var(--milk-white);
+  overflow: auto;
 }

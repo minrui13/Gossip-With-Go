@@ -29,11 +29,11 @@ export default function Login() {
   const navigate = useNavigate();
 
   const form = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     if (form?.current) {
       form.current.classList.add("signup-login-form-main-div-reset");
     }
-  
   }, []);
 
   async function submitLogin() {
@@ -176,6 +176,11 @@ export default function Login() {
                 id="login_username_input"
                 size="small"
                 value={loginInput.password}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    submitLogin();
+                  }
+                }}
                 onChange={(e) => {
                   setLoginInput((prev) => ({
                     ...prev,
