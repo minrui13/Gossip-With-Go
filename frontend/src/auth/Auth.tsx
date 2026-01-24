@@ -7,9 +7,14 @@ import React, {
   useState,
 } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { AuthContextType, AuthProviderType, SignInPayload } from "../types/AuthType";
+import {
+  AuthContextType,
+  AuthProviderType,
+  SignInPayload,
+} from "../types/AuthType";
 import { mainAxios } from "../api";
 import { getUserById } from "../api/userApi";
+import { toast } from "react-toastify";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -29,6 +34,7 @@ export const AuthProvider = ({ children }: AuthProviderType) => {
   });
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const hasCheckedAuth = useRef(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (hasCheckedAuth.current) return;
@@ -54,11 +60,11 @@ export const AuthProvider = ({ children }: AuthProviderType) => {
 
       const userInfo = await getUserById({
         user_id: tokenPayload.data.user_id,
-        token: token
+        token: token,
       });
 
       var userData = userInfo;
-  
+      console.log(userData);
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
     } catch (error) {
@@ -69,7 +75,7 @@ export const AuthProvider = ({ children }: AuthProviderType) => {
     }
   }
 
-  async function signIn(payload:SignInPayload) {
+  async function signIn(payload: SignInPayload) {
     try {
       setIsAuthLoading(true);
       const response = await mainAxios.post(`/users/login`, payload);
@@ -85,8 +91,20 @@ export const AuthProvider = ({ children }: AuthProviderType) => {
   }
 
   function signOut() {
-    localStorage.clear();
-    setUser(null);
+    const signOutTimer = 2000;
+    toast.success(`Signing out...`, {
+      autoClose: signOutTimer,
+    });
+    setTimeout(() => {
+      localStorage.clear();
+      setUser(null);
+      window.location.reload();
+      if (window.location.pathname == "/") {
+        window.location.reload();
+      } else {
+        navigate("/");
+      }
+    }, signOutTimer);
   }
 
   const value = { user, isAuthLoading, verifyToken, signIn, signOut };
