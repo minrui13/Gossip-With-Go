@@ -7,7 +7,10 @@ type PostDefaultResult struct {
 	Post_URL        string  `json:"post_url"`
 	User_ID         int     `json:"user_id"`
 	Username        string  `json:"username"`
+	DisplayName     string  `json:"display_name"`
 	User_Image      string  `json:"user_image"`
+	Topic_ID        int     `json:"topic_id"`
+	Topic_User_ID   int     `json:"topic_user_id"`
 	Topic_Name      string  `json:"topic_name"`
 	Category_Icon   string  `json:"category_icon"`
 	Tag_Name        *string `json:"tag_name"`
@@ -31,7 +34,10 @@ type PostSumVotesResult struct {
 	Post_URL        string  `json:"post_url"`
 	User_ID         int     `json:"user_id"`
 	Username        string  `json:"username"`
+	DisplayName     string  `json:"display_name"`
 	User_Image      string  `json:"user_image"`
+	Topic_ID        int     `json:"topic_id"`
+	Topic_User_ID   int     `json:"topic_user_id"`
 	Topic_Name      string  `json:"topic_name"`
 	Category_Icon   string  `json:"category_icon"`
 	Tag_Name        *string `json:"tag_name"`
@@ -55,7 +61,10 @@ type PostSumVotesIsFollowingResult struct {
 	Post_URL        string  `json:"post_url"`
 	User_ID         int     `json:"user_id"`
 	Username        string  `json:"username"`
+	DisplayName     string  `json:"display_name"`
 	User_Image      string  `json:"user_image"`
+	Topic_ID        int     `json:"topic_id"`
+	Topic_User_ID   int     `json:"topic_user_id"`
 	Topic_Name      string  `json:"topic_name"`
 	Category_Icon   string  `json:"category_icon"`
 	Tag_Name        *string `json:"tag_name"`
@@ -78,4 +87,11 @@ type PostSumVotesIsFollowingResult struct {
 type PostByFollowPayload struct {
 	From_Date time.Time `json:"from_date"`
 	To_Date   time.Time `json:"to_date"`
+}
+
+type PostUpdatePayload struct {
+	Tag_ID  *int   `json:"tag_id"`
+	Post_ID int    `json:"post_id"`
+	Title   string `json:"title"`
+	Content string `json:"content"`
 }
