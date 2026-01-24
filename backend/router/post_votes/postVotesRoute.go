@@ -2,6 +2,7 @@ package postVotesRouter
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -35,6 +36,14 @@ func (h *Handler) Router(r *mux.Router) *mux.Router {
 func (h *Handler) AddPostVote(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	//only verified users can access the data
+	//check token and token header
+	authToken := r.Header.Get("Authorization")
+	//check if authHeader is empty
+	if authToken == "" {
+		util.WriteError(w, http.StatusUnauthorized, errors.New("Missing authorization header"))
+		return
+	}
 	//get user_id from params
 	userID := mux.Vars(r)["user_id"]
 	//convert userID to integer (check if valid integer)
@@ -104,6 +113,14 @@ func (h *Handler) AddPostVote(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdatePostVote(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	//only verified users can access the data
+	//check token and token header
+	authToken := r.Header.Get("Authorization")
+	//check if authHeader is empty
+	if authToken == "" {
+		util.WriteError(w, http.StatusUnauthorized, errors.New("Missing authorization header"))
+		return
+	}
 	//get post_vote_id from params
 	postVoteID := mux.Vars(r)["post_vote_id"]
 	//convert postVoteID to integer (check if valid integer)
