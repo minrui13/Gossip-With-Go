@@ -2,23 +2,25 @@ import { useEffect, useState } from "react";
 import { Spinner } from "react-bootstrap";
 import { LoadingType } from "../types/ComponentType";
 
-
-
-export default function Loading({ isLoading = false, style = {} }: LoadingType) {
-
+export default function Loading({
+  isLoading = false,
+  style = {},
+  variant = "light",
+  position = "center",
+}: LoadingType) {
   return (
     <div
       style={{
-        position: "absolute",
+        position: position == "center" ? "absolute" : "static",
+        transform: position == "center" ? "translate(-50%, -50%)" : "none",
         top: "50%",
         left: "50%",
         zIndex: 999,
-        transform: "translate(-50%, -50%)",
         filter: "drop-shadow(0px 0px 10px #5b5a5a76)",
         ...style,
       }}
     >
-      {isLoading && <Spinner animation="border" variant="light" />}
+      {isLoading && <Spinner animation="border" variant={variant}/>}
     </div>
   );
 }
