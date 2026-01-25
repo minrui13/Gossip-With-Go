@@ -6,4 +6,8 @@ In case, my deployment goes wrong:
 -	Run frontend: cd frontend npm start
 .env file details will be in my documentation
 
+Default account
+username: minrui
+password: minrui123
+
 
