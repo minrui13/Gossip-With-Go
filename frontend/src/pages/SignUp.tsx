@@ -353,10 +353,7 @@ export default function SignUp() {
                     title={
                       <ul style={{ padding: "10px 0px 0px 15px" }}>
                         <li className="mb-2">
-                          Display name can be 0-20 characters
-                        </li>
-                        <li className="mb-2">
-                          Only allow alphabets, numbers, '-', '_' and'.'
+                          Display name can be 0-16 characters
                         </li>
                         <li>Default display name will be the username</li>
                       </ul>
@@ -369,16 +366,10 @@ export default function SignUp() {
                   value={signUpInput.display_name}
                   onChange={(e) => {
                     const value = e.target.value;
-                    var regex = /^[a-zA-Z0-9._\- ]{0,21}$/;
-                    if (!regex.test(value)) {
+                    if (value.trim().length > 16) {
                       setInputError((prev) => ({
                         ...prev,
-                        display_name: "Character not allowed",
-                      }));
-                    } else if (value.trim().length > 20) {
-                      setInputError((prev) => ({
-                        ...prev,
-                        display_name: "Maximum only 20 characters",
+                        display_name: "Maximum only 16 characters",
                       }));
                     } else {
                       setInputError((prev) => ({
@@ -664,6 +655,11 @@ export default function SignUp() {
                       inputError.password.trim().length > 0 ||
                       signUpInput.password.trim().length == 0
                     }
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            submitSignUp();
+                        }
+                    }}
                     slotProps={{
                       input: {
                         //Add eye button to toglle visibility
@@ -779,7 +775,7 @@ export default function SignUp() {
               <button
                 type="button"
                 style={{ width: "100%" }}
-                disabled={isLoading}
+                disabled={isLoading || signUpInput.confirm_password.length==0}
                 className="btn milkwhite-woodbrown-woodbrown milkwhite-woodbrown-woodbrown-hover zoom-in"
                 onClick={() => submitSignUp()}
               >
