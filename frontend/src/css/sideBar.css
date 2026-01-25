@@ -1,0 +1,33 @@
+.sidebar-container {
+  width: 17vw;
+  height: 91vh;
+  position: absolute;
+  padding: 0px 30px;
+  left: 0%;
+  bottom: 0%;
+  transition: all 0.7s;
+  background-color: #ffc03b;
+  border-right: 2px solid var(--wood-brown);
+}
+
+.sidebar-container.active {
+  left: -100%;
+}
+
+.sidebar-container a {
+  font-weight: 600;
+  color: var(--wood-brown);
+}
+
+.sidebar-container ul {
+  padding: 0;
+}
+
+.sidebar-container ul li {
+  list-style-type: none;
+  margin: 10px 0;
+}
+
+.sidebar-container ul li a {
+  text-decoration: none;
+}
