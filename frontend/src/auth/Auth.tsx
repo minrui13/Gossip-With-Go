@@ -64,7 +64,6 @@ export const AuthProvider = ({ children }: AuthProviderType) => {
       });
 
       var userData = userInfo;
-      console.log(userData);
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
     } catch (error) {
