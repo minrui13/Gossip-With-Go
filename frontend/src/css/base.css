@@ -11,16 +11,20 @@
 :root {
   --honey-yellow: #ffc03b;
   --canary-yellow: #ffe9bb;
+  --cream-yellow: #fff1d6;
   --wood-brown: #432616;
   --caramel-brown: #8e4f2d;
+  --hazelnut-brown: #693b22;
   --milk-white: #fff9ec;
   --oak-red: #a33003;
   --tin-gray: #cccdc7;
   --blue-gray: #5f7f97;
   --toastify-color-success: #ffc03b;
-  --warm-gray: #d8d4c8; 
-  --stone-gray: #bdb6a8; 
-  --ash-brown: #9a9387; 
+  --warm-gray: #d8d4c8;
+  --stone-gray: #bdb6a8;
+  --ash-brown: #9a9387;
+  --bs-success: #ffc03b;
+  --bs-success-rgb: 255,192,59
 }
 
 h1,
@@ -62,4 +66,31 @@ button {
 
 ::-webkit-scrollbar {
   display: none; /* Hides the scrollbar */
+}
+
+.empty-button {
+  background-color: rgba(0, 0, 0, 0);
+  border: 0px;
+  box-shadow: 0px;
+  color: inherit;
+  padding: 0;
+}
+
+@keyframes fade-in {
+  from {opacity: 0;}
+  to {opacity: 1}
+}
+
+.fade-in {
+    animation: fade-in 0.2s ease-out;
+}
+
+
+@keyframes fade-out {
+  from {opacity: 1;}
+  to {opacity: 0}
+}
+
+.fade-out {
+    animation: fade-out 0.2s ease-out;
 }

@@ -24,6 +24,29 @@
   border: 1.4px solid var(--wood-brown);
 }
 
+/*milk white bg, hazelnut brown border, hazelnut brown text active focus*/
+.milkwhite-hazelnutbrown-hazelnutbrown,
+.milkwhite-hazelnutbrown-hazelnutbrown:active,
+.milkwhite-hazelnutbrown-hazelnutbrown:focus {
+  background-color: var(--milk-white);
+  color: var(--hazelnut-brown);
+  border: 1.4px solid var(--hazelnut-brown);
+}
+
+/*milk white bg, hazelnut brown border, hazelnut brown text disabled*/
+.milkwhite-hazelnutbrown-hazelnutbrown:disabled {
+  background-color: var(--milk-white);
+  color: #693b2298;
+  border: 1.4px solid #693b2298;
+}
+
+/*milk white bg, hazelnut brown border, hazelnut brown text on hover*/
+.milkwhite-hazelnutbrown-hazelnutbrown-hover:hover {
+  background-color: var(--milk-white);
+  color: var(--hazelnut-brown);
+  border: 1.4px solid var(--hazelnut-brown);
+}
+
 /*wood brown bg, wood brown border, milk white text*/
 .woodbrown-woodbrown-milkwhite {
   background-color: var(--wood-brown);
@@ -45,8 +68,41 @@
   border: 1.8px solid var(--wood-brown);
 }
 
+/*wood brown bg, wood brown border cream yellow text active focus*/
+.woodbrown-woodbrown-creamyellow,
+.woodbrown-woodbrown-creamyellow:active .woodbrown-woodbrown-creamyellow:focus {
+  background-color: var(--wood-brown);
+  border-color: var(--wood-brown);
+  color: var(--cream-yellow);
+}
+
+/*wood brown bg, wood brown border, cream yellow text on hover*/
+.woodbrown-woodbrown-creamyellow-hover:hover {
+  background-color: var(--wood-brown);
+  border-color: var(--wood-brown);
+  color: var(--cream-yellow);
+}
+
+/*wood brown bg, wood brown border canary yellow text active focus*/
+.woodbrown-woodbrown-canaryyellow,
+.woodbrown-woodbrown-canaryyellow:active
+  .woodbrown-woodbrown-canaryyellow:focus {
+  background-color: var(--wood-brown);
+  border-color: var(--wood-brown);
+  color: var(--canary-yellow);
+}
+
+/*wood brown bg, wood brown border, canary yellow text on hover*/
+.woodbrown-woodbrown-canaryyellow-hover:hover {
+  background-color: var(--wood-brown);
+  border-color: var(--wood-brown);
+  color: var(--canary-yellow);
+}
+
 /*branch brown bg, branch brown border, milk white text*/
-.branchbrown-branchbrown-milkwhite {
+.branchbrown-branchbrown-milkwhite,
+.branchbrown-branchbrown-milkwhite:active,
+.branchbrown-branchbrown-milkwhite:focus {
   background-color: var(--caramel-brown);
   border-color: var(--caramel-brown);
   color: var(--milk-white);
@@ -63,6 +119,239 @@
 .branchbrown-branchbrown-milkwhite-hover:hover {
   background-color: var(--caramel-brown);
   border-color: var(--caramel-brown);
+  color: var(--milk-white);
+}
+
+/*branch brown bg, branch brown border cream yellow text on hover*/
+.branchbrown-branchbrown-creamyellow,
+.branchbrown-branchbrown-creamyellow:active
+  .branchbrown-branchbrown-creamyellow:focus {
+  background-color: var(--caramel-brown);
+  border-color: var(--caramel-brown);
+  color: var(--cream-yellow);
+}
+
+.branchbrown-branchbrown-creamyellow:disabled {
+  background-color: #8e4f2d98;
+  border-color: #8e4f2d98;
+  color: var(--cream-yellow);
+}
+
+/*branch brown bg, branch brown border, cream yellow text on hover*/
+.branchbrown-branchbrown-creamyellow-hover:hover {
+  background-color: var(--caramel-brown);
+  border-color: var(--caramel-brown);
+  color: var(--cream-yellow);
+}
+
+/*branch brown bg, branch brown border, canary yellow text*/
+.branchbrown-branchbrown-canaryyellow,
+.branchbrown-branchbrown-canaryyellow:active,
+.branchbrown-branchbrown-canaryyellow:focus {
+  background-color: var(--caramel-brown);
+  border-color: var(--caramel-brown);
+  color: var(--canary-yellow);
+}
+
+/*canary yellow bg, branch brown border, branchbrown text focus, active*/
+.canaryyellow-branchbrown-branchbrown,
+.canaryyellow-branchbrown-branchbrown:focus,
+.canaryyellow-branchbrown-branchbrown:active {
+  background-color: var(--canary-yellow);
+  border-color: var(--caramel-brown);
+  color: var(--caramel-brown);
+}
+
+/*canary yellow bg, branch brown border, branchbrown text on hover*/
+.canaryyellow-branchbrown-branchbrown-hover:hover {
+  background-color: var(--canary-yellow);
+  border-color: var(--caramel-brown);
+  color: var(--caramel-brown);
+}
+
+/*canary yellow  bg, hazelnut brown border, hazelnut brown text active focus*/
+.canaryyellow-hazelnutbrown-hazelnutbrown,
+.canaryyellow-hazelnutbrown-hazelnutbrown:active,
+.canaryyellow-hazelnutbrown-hazelnutbrown:focus {
+  background-color: var(--canary-yellow);
+  color: var(--hazelnut-brown);
+  border: 1.4px solid var(--hazelnut-brown);
+}
+
+/*canary yellow  bg, hazelnut brown border, hazelnut brown text on hover*/
+.canaryyellow-hazelnutbrown-hazelnutbrown-hover:hover {
+  background-color: var(--canary-yellow);
+  color: var(--hazelnut-brown);
+  border: 1.4px solid var(--hazelnut-brown);
+}
+
+/*cream yellow bg, branch brown border, branchbrown text focus, active*/
+.creamyellow-branchbrown-branchbrown,
+.creamyellow-branchbrown-branchbrown:focus,
+.creamyellow-branchbrown-branchbrown:active {
+  background-color: var(--cream-yellow);
+  border-color: var(--caramel-brown);
+  color: var(--caramel-brown);
+}
+
+/*cream yellow bg, branch brown border, branchbrown text disabled*/
+.creamyellow-branchbrown-branchbrown:disabled {
+  background-color: var(--cream-yellow);
+  border-color: #8e4f2d98;
+  color: #8e4f2d98;
+}
+
+/*cream yellow bg, branch brown border, branchbrown text on hover*/
+.creamyellow-branchbrown-branchbrown-hover:hover {
+  background-color: var(--cream-yellow);
+  border-color: var(--caramel-brown);
+  color: var(--caramel-brown);
+}
+
+/*cream yellow bg, wooodbrown border, woodbrown text focus, active*/
+.creamyellow-woodbrown-woodbrown,
+.creamyellow-woodbrown-woodbrown:focus,
+.creamyellow-woodbrown-woodbrown:active {
+  background-color: var(--cream-yellow);
+  border-color: var(--wood-brown);
+  color: var(--wood-brown);
+}
+
+/*canary yellow bg, branch brown border, branchbrown text on hover*/
+.canaryyellow-branchbrown-branchbrown-hover:hover {
+  background-color: var(--canary-yellow);
+  border-color: var(--caramel-brown);
+  color: var(--caramel-brown);
+}
+
+/*canary yellow bg, wood brown border, wood brown text focus, active*/
+.canaryyellow-woodbrown-woodbrown,
+.canaryyellow-woodbrown-woodbrown:focus,
+.canaryyellow-woodbrown-woodbrown:active {
+  background-color: var(--canary-yellow);
+  border-color: var(--wood-brown);
+  color: var(--wood-brown);
+}
+
+/*canary yellow bg, wood brown border, wood brown text on hover*/
+.canaryyellow-woodbrown-woodbrown-hover:hover {
+  background-color: var(--canary-yellow);
+  border-color: var(--wood-brown);
+  color: var(--wood-brown);
+}
+
+/*honey yellow bg, wood brown border, wood brown text focus, active*/
+.honeyyellow-woodbrown-woodbrown,
+.honeyyellow-woodbrown-woodbrown:focus,
+.honeyyellow-woodbrown-woodbrown:active {
+  background-color: var(--honey-yellow);
+  border-color: var(--wood-brown);
+  color: var(--wood-brown);
+}
+.honeyyellow-woodbrown-woodbrown:disabled {
+  background-color: #ffc13ba5;
+  border-color: #43261698;
+  color: #43261698;
+}
+
+/*honey yellow bg, wood brown border, wood brown text on hover*/
+.honeyyellow-woodbrown-woodbrown-hover:hover {
+  background-color: var(--honey-yellow);
+  border-color: var(--wood-brown);
+  color: var(--wood-brown);
+}
+
+/*honey yellow bg, branch brown border, branch brown text focus, active*/
+.honeyyellow-branchbrown-branchbrown .honeyyellow-branchbrown-branchbrown:focus,
+.honeyyellow-branchbrown-branchbrown:active {
+  background-color: var(--honey-yellow);
+  border-color: var(--caramel-brown);
+  color: var(--caramel-brown);
+}
+
+/*honey yellow bg, branch brown border, branch brown text on hover*/
+.honeyyellow-branchbrown-branchbrown-hover:hover {
+  background-color: var(--honey-yellow);
+  border-color: var(--caramel-brown);
+  color: var(--caramel-brown);
+}
+
+/*honey yellow bg, hazelnut brown border, hazelnut brown text focus, active*/
+.honeyyellow-hazelnutbrown-hazelnutbrown
+  .honeyyellow-hazelnutbrown-hazelnutbrown:focus,
+.honeyyellow-hazelnutbrown-hazelnutbrown:active {
+  background-color: var(--honey-yellow);
+  border-color: var(--hazelnut-brown);
+  color: var(--hazelnut-brown);
+}
+
+/*honey yellow bg, hazelnut brown border, hazelnut brown text on hover*/
+.honeyyellow-hazelnutbrown-hazelnutbrown-hover:hover {
+  background-color: var(--honey-yellow);
+  border-color: var(--hazelnut-brown);
+  color: var(--hazelnut-brown);
+}
+
+/*branch brown bg, wood brown border, milk white text*/
+.branchbrown-woodbrown-milkwhite,
+.branchbrown-woodbrown-milkwhite:active,
+.branchbrown-woodbrown-milkwhite:focus {
+  background-color: var(--caramel-brown);
+  border-color: var(--wood-brown);
+  color: var(--milk-white);
+}
+
+/*hazelnut brown bg, hazelnut brown border canary yellow text active focus*/
+.hazelnutbrown-hazelnutbrown-canaryyellow,
+.hazelnutbrown-hazelnutbrown-canaryyellow:active
+  .hazelnutbrown-hazelnutbrown-canaryyellow:focus {
+  background-color: var(--hazelnut-brown);
+  border-color: var(--hazelnut-brown);
+  color: var(--canary-yellow);
+}
+
+/*wood brown bg, wood brown border, canary yellow text on hover*/
+.hazelnutbrown-hazelnutbrown-canaryyellow-hover:hover {
+  background-color: var(--hazelnut-brown);
+  border-color: var(--hazelnut-brown);
+  color: var(--canary-yellow);
+}
+
+/*hazelnut brown bg, hazelnut brown border cream yellow text active focus*/
+.hazelnutbrown-hazelnutbrown-creamyellow,
+.hazelnutbrown-hazelnutbrown-creamyellow:active
+  .hazelnutbrown-hazelnutbrown-creamyellow:focus {
+  background-color: var(--hazelnut-brown);
+  border-color: var(--hazelnut-brown);
+  color: var(--cream-yellow);
+}
+
+/*wood brown bg, wood brown border, cream yellow text on hover*/
+.hazelnutbrown-hazelnutbrown-creamyellow-hover:hover {
+  background-color: var(--hazelnut-brown);
+  border-color: var(--hazelnut-brown);
+  color: var(--cream-yellow);
+}
+
+/*hazelnut brown bg, hazelnut brown border milk white text active focus*/
+.hazelnutbrown-hazelnutbrown-milkwhite,
+.hazelnutbrown-hazelnutbrown-milkwhite:active
+  .hazelnutbrown-hazelnutbrown-milkwhite:focus {
+  background-color: var(--hazelnut-brown);
+  border-color: var(--hazelnut-brown);
+  color: var(--milk-white);
+}
+
+/*hazelnut brown bg, hazelnut brown border milk white text on disabled*/
+.hazelnutbrown-hazelnutbrown-milkwhite:disabled {
+  background-color: #693b2298;
+  border-color: #693b2298;
+}
+
+/*hazelnut brown bg, hazelnut brown border, milk white text on hover*/
+.hazelnutbrown-hazelnutbrown-milkwhite-hover:hover {
+  background-color: var(--hazelnut-brown);
+  border-color: var(--hazelnut-brown);
   color: var(--milk-white);
 }
 
@@ -128,10 +417,19 @@
   color: var(--caramel-brown);
 }
 
+.sign-up-login-password-visibility i {
+  font-size: 13px;
+  color: var(--caramel-brown);
+}
+
+.rate-div {
+  cursor: pointer;
+}
+
 /*------------------------------------------------------------------*/
 /*Outlet*/
 .page-layout-outlet {
-  padding-top: 70px;
+  padding-top: 60px;
   width: 83vw;
   height: 100%;
   position: fixed;
@@ -139,4 +437,42 @@
   bottom: 0%;
   background-color: var(--milk-white);
   overflow: auto;
+}
+
+/*------------------------------------------------------------------*/
+/*Post, PostPage, Comment*/
+.post-postpage-comment-top-header-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-postpage-comment-top-header-end.btn {
+    position: relative;
+    top:-8px;
+  font-size: 25px;
+  color: var(--caramel-brown);
+}
+
+.post-postpage-comment-top-header-end.btn:active {
+  color: var(--wood-brown);
+}
+
+.post-postpage-comment-more-menu-label {
+  margin-bottom: 0px;
+}
+.post-postpage-comment-more-menu-label i {
+  font-size: 12px;
+  color: #502b16;
+}
+.post-postpage-comment-edit-btn-div {
+  margin-top: 15px;
+  gap: 15px;
+}
+
+.post-postpage-comment-edit-content-label {
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #eeb63c;
+  font-size: 25px;
 }
