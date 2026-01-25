@@ -37,6 +37,8 @@ func (h *Handler) Router(r *mux.Router) *mux.Router {
 	r.HandleFunc("/getPostsByFollow/{user_id}", h.FilterByFollow).Methods("POST")
 	//Update posts
 	r.HandleFunc("/updatePost/{post_id}", h.UpdatePost).Methods("PUT")
+	//Delete posts
+	r.HandleFunc("/deletePost/{post_id}", h.DeletePost).Methods("DELETE")
 
 	return r
 }
@@ -1099,5 +1101,42 @@ func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	util.WriteJSON(w, http.StatusOK, result)
+
+}
+
+// delete posts information
+func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	//get post_id from params
+	postID := mux.Vars(r)["post_id"]
+	//convert postID to integer (check if valid integer)
+	postIDInt, err := strconv.Atoi(postID)
+	//check if id is an integer
+	if err != nil {
+		util.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	//delete post from db
+	response, err := h.db.Exec(ctx,
+		`DELETE FROM posts WHERE post_id=$1`,
+		postIDInt,
+	)
+
+	//server error
+	if err != nil {
+		util.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if response.RowsAffected() == 0 {
+		util.WriteError(w, http.StatusNotFound, errors.New("post not deleted"))
+		return
+	}
+
+	util.WriteJSON(w, http.StatusOK, map[string]int{
+		"post_id": postIDInt,
+	})
 
 }
