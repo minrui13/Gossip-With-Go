@@ -7,11 +7,13 @@
   height: 100vh;
 }
 .main-page-post-div {
+    max-width: 1500px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 40px;
   padding: 25px 20px;
+  margin: auto;
 }
 
 .main-page-scroll-to-top-btn.show {
