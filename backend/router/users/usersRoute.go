@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -181,7 +180,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	).
 		Scan(&result.UserId, &result.Username, &result.DisplayName, &result.Bio, &created, &result.Password, &result.ImageName)
 	if errors.Is(err, sql.ErrNoRows) || !auth.ComparePasswords(result.Password, []byte(payload.Password)) {
-		util.WriteError(w, http.StatusBadRequest, fmt.Errorf("Invalid username or password"))
+		util.WriteError(w, http.StatusBadRequest, errors.New("Invalid username or password"))
 		return
 	}
 
