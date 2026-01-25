@@ -12,6 +12,7 @@ type PostDefaultResult struct {
 	Topic_ID        int     `json:"topic_id"`
 	Topic_User_ID   int     `json:"topic_user_id"`
 	Topic_Name      string  `json:"topic_name"`
+	Topic_URL       string  `json:"topic_url"`
 	Category_Icon   string  `json:"category_icon"`
 	Tag_Name        *string `json:"tag_name"`
 	Tag_Icon        *string `json:"tag_icon"`
@@ -39,6 +40,7 @@ type PostSumVotesResult struct {
 	Topic_ID        int     `json:"topic_id"`
 	Topic_User_ID   int     `json:"topic_user_id"`
 	Topic_Name      string  `json:"topic_name"`
+	Topic_URL      string  `json:"topic_url"`
 	Category_Icon   string  `json:"category_icon"`
 	Tag_Name        *string `json:"tag_name"`
 	Tag_Icon        *string `json:"tag_icon"`
@@ -66,6 +68,7 @@ type PostSumVotesIsFollowingResult struct {
 	Topic_ID        int     `json:"topic_id"`
 	Topic_User_ID   int     `json:"topic_user_id"`
 	Topic_Name      string  `json:"topic_name"`
+	Topic_URL      string  `json:"topic_url"`
 	Category_Icon   string  `json:"category_icon"`
 	Tag_Name        *string `json:"tag_name"`
 	Tag_Icon        *string `json:"tag_icon"`
@@ -94,4 +97,11 @@ type PostUpdatePayload struct {
 	Post_ID int    `json:"post_id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
+}
+
+type PostAddPayload struct {
+	Tag_ID   *int   `json:"tag_id"`
+	Title    string `json:"title"`
+	Content  string `json:"content"`
+	Post_URL string `json:"post_url"`
 }
