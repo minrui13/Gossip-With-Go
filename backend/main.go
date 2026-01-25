@@ -16,10 +16,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080" // fallback for local testing
-	}
+	address 8080: missing port in address
+==> Exited with status 1
 
 	newServer := server.NewServer(port, dbPool)
 
