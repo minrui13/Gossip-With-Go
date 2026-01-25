@@ -3,6 +3,7 @@ import { useAuth } from "../auth/Auth";
 import { useEffect, useRef, useState } from "react";
 import {
   deletePost,
+  getPostsByFollow,
   getPostsByFollowAndPopularity,
   getPostsByPopularityAndSearch,
 } from "../api/postsApi";
@@ -17,6 +18,9 @@ import NotLogin from "../components/NotLogin";
 import { getAllTags } from "../api/tagApi";
 import { TagDefaultType } from "../types/TagType";
 import { toast } from "react-toastify";
+import { TopicDefaultResult } from "../types/TopicsType";
+import { Topic } from "../components/Topic";
+import { getTopicsByPopularityAndSearch } from "../api/topicsApi";
 
 export default function MainPage() {
   const { user } = useAuth();
@@ -25,18 +29,22 @@ export default function MainPage() {
   const limit = 10;
   const [isMore, setIsMore] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [sortByValue, setSortByValue] = useState("buzzing");
-  const [showScrollToTop, setShowScrollToTop] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [tagsArr, setTagArr] = useState<TagDefaultType[]>([]);
-  const mainPageDivRef = useRef<HTMLDivElement | null>(null);
   const sortData = [
     { value: "buzzing", name: "Buzzing" },
     { value: "alpha", name: "A-Z" },
     { value: "new", name: "New" },
   ];
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [topicArr, setTopicArr] = useState<TopicDefaultResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [sortByValue, setSortByValue] = useState(
+    sortData.some((ele) => ele.value == searchParams.get("sortBy"))
+      ? searchParams.get("sortBy")!
+      : "buzzing",
+  );
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [tagsArr, setTagArr] = useState<TagDefaultType[]>([]);
+  const mainPageDivRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     retrieveAllTags();
@@ -64,28 +72,50 @@ export default function MainPage() {
   }, []);
 
   useEffect(() => {
-    retrievePost();
-  }, [sortByValue]);
+    if (searchParams.get("topic")) {
+      retriveTopic();
+    }
+    else{
+        setTopicArr([])
+    }
+    retrievePost(true);
+  }, [searchParams, sortByValue]);
 
   useEffect(() => {
     const sortBy = searchParams.get("sortBy");
-    if (sortData.some((ele) => ele.value == sortBy)) {
+    if (
+      sortData.some((ele) => ele.value == sortBy) ||
+      (sortBy == "following" && user && user?.user_id)
+    ) {
       setSortByValue(sortBy ?? "");
     }
   }, [searchParams.get("sortBy")]);
 
-  async function retrievePost() {
+  async function retriveTopic() {
+    try {
+      const payload = {
+        user_id: 0,
+        limit: limit,
+        search: searchParams.get("post") ?? "",
+        cursor: null,
+        ...(sortByValue !== "buzzing" && { filter: sortByValue }),
+      };
+      const result = await getTopicsByPopularityAndSearch(payload);
+      setTopicArr(result.result);
+    } catch (e) {}
+  }
+
+  async function retrievePost(reset: boolean) {
     try {
       setIsLoading(true);
       if (!user) {
         const payload = {
           user_id: 0,
           limit: limit,
-          search: "",
-          cursor: cursor,
+          search: searchParams.get("post") ?? "",
+          cursor: reset ? null : cursor,
           ...(sortByValue !== "buzzing" && { filter: sortByValue }),
         };
-
         const resultJSON = await getPostsByPopularityAndSearch(payload);
         setCursor(resultJSON.cursor);
         const result = resultJSON.result;
@@ -99,19 +129,25 @@ export default function MainPage() {
           created_date: calculateDate(ele.created_date),
         }));
 
-        setPostArr((prev) => {
-          const prevArr = [...prev];
-          formattedResult.forEach((formattedEle) => {
-            if (
-              !prevArr.some(
-                (prevEle) => prevEle.post_id == formattedEle.post_id,
-              )
-            ) {
-              prevArr.push(formattedEle);
-            }
+        if (reset) {
+          console.log(formattedResult);
+          console.log("hello");
+          setPostArr(formattedResult);
+        } else {
+          setPostArr((prev) => {
+            const prevArr = [...prev];
+            formattedResult.forEach((formattedEle) => {
+              if (
+                !prevArr.some(
+                  (prevEle) => prevEle.post_id == formattedEle.post_id,
+                )
+              ) {
+                prevArr.push(formattedEle);
+              }
+            });
+            return prevArr;
           });
-          return prevArr;
-        });
+        }
       } else {
         //try to get token
         const token = localStorage.getItem("token");
@@ -119,37 +155,72 @@ export default function MainPage() {
         const payload = {
           user_id: user.user_id,
           limit: limit,
-          search: "",
+          search: searchParams.get("post") ?? "",
           token: token,
-          cursor: cursor,
+          cursor: reset ? null : cursor,
           ...(sortByValue !== "buzzing" && { filter: sortByValue }),
         };
-
-        const resultJSON = await getPostsByFollowAndPopularity(payload);
-        setCursor(resultJSON.cursor);
-        const result = resultJSON.result;
-        if (resultJSON.cursor) {
-          setIsMore(true);
-        } else {
-          setIsMore(false);
-        }
-        const formattedResult = result.map((ele) => ({
-          ...ele,
-          created_date: calculateDate(ele.created_date),
-        }));
-        setPostArr((prev) => {
-          const prevArr = [...prev];
-          formattedResult.forEach((formattedEle) => {
-            if (
-              !prevArr.some(
-                (prevEle) => prevEle.post_id == formattedEle.post_id,
-              )
-            ) {
-              prevArr.push(formattedEle);
-            }
+        if (sortByValue == "following") {
+          const resultJSON = await getPostsByFollow(payload);
+          setCursor(resultJSON.cursor);
+          const result = resultJSON.result;
+          if (resultJSON.cursor) {
+            setIsMore(true);
+          } else {
+            setIsMore(false);
+          }
+          const formattedResult = result.map((ele) => ({
+            ...ele,
+            created_date: calculateDate(ele.created_date),
+          }));
+          if (reset) {
+            setPostArr(formattedResult);
+            return;
+          }
+          setPostArr((prev) => {
+            const prevArr = [...prev];
+            formattedResult.forEach((formattedEle) => {
+              if (
+                !prevArr.some(
+                  (prevEle) => prevEle.post_id == formattedEle.post_id,
+                )
+              ) {
+                prevArr.push(formattedEle);
+              }
+            });
+            return prevArr;
           });
-          return prevArr;
-        });
+        } else {
+          const resultJSON = await getPostsByFollowAndPopularity(payload);
+          setCursor(resultJSON.cursor);
+          const result = resultJSON.result;
+          if (resultJSON.cursor) {
+            setIsMore(true);
+          } else {
+            setIsMore(false);
+          }
+          const formattedResult = result.map((ele) => ({
+            ...ele,
+            created_date: calculateDate(ele.created_date),
+          }));
+          if (reset) {
+            setPostArr(formattedResult);
+            return;
+          }
+          setPostArr((prev) => {
+            const prevArr = [...prev];
+            formattedResult.forEach((formattedEle) => {
+              if (
+                !prevArr.some(
+                  (prevEle) => prevEle.post_id == formattedEle.post_id,
+                )
+              ) {
+                prevArr.push(formattedEle);
+              }
+            });
+            return prevArr;
+          });
+        }
       }
     } catch (e) {
     } finally {
@@ -189,7 +260,7 @@ export default function MainPage() {
       setIsLoading(true);
       const result = await deletePost(postid);
 
-      toast.success("post is successfully deleted!", {
+      toast.success("Buzz is successfully deleted!", {
         autoClose: 2000,
       });
       setTimeout(() => {
@@ -198,7 +269,7 @@ export default function MainPage() {
         );
       }, 2000);
     } catch (e) {
-      toast.error("post is not deleted! error!", {
+      toast.error("Buzz is not deleted! error!", {
         autoClose: 2000,
       });
     } finally {
@@ -217,7 +288,7 @@ export default function MainPage() {
         }}
       />
       <div className="main-page-main-div" ref={mainPageDivRef}>
-        <div className="main-page-filter-div d-flex justify-content-end pe-5 pt-2">
+        <div className="main-page-filter-div d-flex justify-content-end pe-5 pt-3">
           <Select
             value={sortByValue}
             id="main-page-filter-select"
@@ -273,8 +344,12 @@ export default function MainPage() {
             {sortData.map((sortEle) => (
               <MenuItem value={sortEle.value}>{sortEle.name}</MenuItem>
             ))}
+            {user && user?.user_id && (
+              <MenuItem value={"following"}>Following</MenuItem>
+            )}
           </Select>
         </div>
+
         {showScrollToTop && (
           <button
             id="main-page-scroll-to-top-btn"
@@ -344,7 +419,7 @@ export default function MainPage() {
                 <button
                   disabled={isLoading}
                   onClick={() => {
-                    retrievePost();
+                    retrievePost(false);
                   }}
                   type="button"
                   className="branchbrown-woodbrown-milkwhite main-page-load-more-btn btn canaryyellow-branchbrown-branchbrown-hover"

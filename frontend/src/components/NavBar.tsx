@@ -12,7 +12,7 @@ import {
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import DefaultImage from "../images/BuzzBeeNotFound.PNG";
 import { useAuth } from "../auth/Auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getTopicsByPopularityAndSearch } from "../api/topicsApi";
 import { getPostsByPopularityAndSearch } from "../api/postsApi";
@@ -21,6 +21,7 @@ import Loading from "./Loading";
 import { TopicDefaultResult } from "../types/TopicsType";
 import { toast } from "react-toastify";
 import BuzzBeeLogout from "../images/BuzzBeeLogout.PNG";
+import { matchString } from "../utils/UtilsFunction";
 
 export default function NavBar() {
   const navigate = useNavigate();
@@ -40,8 +41,8 @@ export default function NavBar() {
   const [searchTopicsArr, setSearchTopicsArr] = useState<TopicDefaultResult[]>(
     [],
   );
+  const [searchParams, setSearchParams] = useSearchParams();
   const LIMIT = 5;
-  const OFFSET = 0;
 
   useEffect(() => {
     async function initiateNavBar() {
@@ -50,23 +51,13 @@ export default function NavBar() {
     initiateNavBar();
   }, []);
 
-  //match string and then bold the part where the string mtaches
-  function matchString(matchString: string, string: string) {
-    const regex = new RegExp(`(${matchString})`, "ig");
-    const parts = string.split(regex);
-    return (
-      string.trim().length > 0 &&
-      parts.map((part, index) =>
-        regex.test(part) ? (
-          <span key={index}>{part}</span>
-        ) : (
-          <span key={index} style={{ fontWeight: 600 }}>
-            {part}
-          </span>
-        ),
-      )
-    );
-  }
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchTopicsAndPosts(currentInput);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [currentInput]);
 
   //for the search box
   async function searchTopicsAndPosts(search: string) {
@@ -75,8 +66,9 @@ export default function NavBar() {
       const [topicsResponse, postsResponse] = await Promise.all([
         await getTopicsByPopularityAndSearch({
           limit: LIMIT,
-          offset: OFFSET,
+          user_id: user?.user_id || 0,
           search: search.toLowerCase(),
+          cursor: null,
         }),
         await getPostsByPopularityAndSearch({
           limit: LIMIT,
@@ -85,9 +77,9 @@ export default function NavBar() {
           cursor: null,
         }),
       ]);
-      setSearchTopicsArr(topicsResponse);
+      setSearchTopicsArr(topicsResponse.result);
       setSearchOptionsArr([
-        ...topicsResponse.map((t) => ({
+        ...topicsResponse.result.map((t) => ({
           id: t.topic_id,
           title: t.topic_name,
           type: "Topic",
@@ -102,18 +94,7 @@ export default function NavBar() {
   }
 
   function handleSignOut() {
-    toast.success(`Signing out...`, {
-      autoClose: 3000,
-    });
-
-    setTimeout(() => {
-      signOut();
-      if (window.location.pathname == "/") {
-        window.location.reload();
-      } else {
-        navigate("/");
-      }
-    }, 3000);
+    signOut();
   }
 
   return (
@@ -283,10 +264,31 @@ export default function NavBar() {
               }}
               onInputChange={(_, value, reason) => {
                 setCurrentInput(value);
-                searchTopicsAndPosts(value);
+                setSearchParams((prev) => {
+                  const params = new URLSearchParams(prev.toString());
+                  params.set("post", value);
+                  if (searchInputArr.length == 0) {
+                    params.set("topic", value);
+                  }
+                  return params;
+                });
               }}
               onChange={(_, value) => {
                 var lastIndex = searchInputArr.length - 1;
+                if (value[value.length - 1]) {
+                  const lastOption = value[value.length - 1];
+                  setSearchParams((prev) => {
+                    const params = new URLSearchParams(prev.toString());
+                    if (typeof lastOption !== "string" && lastOption.type=="Topic") {
+                      params.set("topic", lastOption.title);
+                      params.delete("post");
+                    }
+                    else if (typeof lastOption !== "string"&&lastOption.type=="Post"){
+                      params.set("post", lastOption.title);
+                    }
+                    return params;
+                  });
+                }
                 if (
                   value.length < searchInputArr.length &&
                   searchInputArr[lastIndex].type == "Post"
@@ -298,6 +300,7 @@ export default function NavBar() {
                   //reset current Input
                   setCurrentInput("");
                 }
+
                 //add value to arr
                 setSearchInputArr(
                   value.map((ele) =>
@@ -313,10 +316,7 @@ export default function NavBar() {
             {/*public users */}
             {isAuthLoading ? (
               <div>
-                <Loading
-                  isLoading={isAuthLoading}
-                  style={{ position: "static", transform: "none" }}
-                />
+                <Loading isLoading={isAuthLoading} position="static" />
               </div>
             ) : user ? (
               <div
@@ -349,7 +349,7 @@ export default function NavBar() {
                     Hive
                   </NavDropdown.Item>
                   <NavDropdown.Item
-                    href="/"
+                    href="/createBuzz"
                     style={{
                       borderBottomRightRadius: 5,
                       borderBottomLeftRadius: 5,
