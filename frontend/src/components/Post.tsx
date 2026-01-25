@@ -251,11 +251,11 @@ export default function Post({
       setPostContent(result.content);
       setShowEditPost(false);
       setMenuAnchorEl(null);
-      toast.success(`Post is updated!`, {
+      toast.success(`Buzz is updated!`, {
         autoClose: 2000,
       });
     } catch (e) {
-        toast.error("Post is not updated! error!", { autoClose: 2000 });
+        toast.error("Buzz is not updated! error!", { autoClose: 2000 });
     } finally {
       setTimeout(() => {
         setUpdateLoading(false);

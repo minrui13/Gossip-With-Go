@@ -400,7 +400,7 @@ export function Comment({
               <div className="d-flex justify-content-end post-postpage-comment-edit-btn-div">
                 <button
                   type="button"
-                  //disabled
+                  disabled={isUpdateLoading}
                   className="btn comment-component-reply-btn  comment-component-edit-cancel-btn  creamyellow-branchbrown-branchbrown-hover"
                   onClick={() => {
                     setShowCommentEdit(false);

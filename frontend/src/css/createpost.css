@@ -1,0 +1,60 @@
+.create-post-container {
+  padding: 40px 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.create-post-main-div {
+  padding: 40px 60px;
+  max-width: 1500px;
+  width: 100%;
+  background-color: #ffecc6;
+  border-radius: 20px;
+  transform: scale(1);
+  transition: transform 0.3s cubic-bezier(0, -0.03, 0.2, 0.99);
+  transition: background-color 0.3s cubic-bezier(0, -0.03, 0.2, 0.99);
+  filter: drop-shadow(0px 0px 5px rgba(135, 135, 135, 0.1));
+}
+
+.create-post-heading {
+  margin-bottom: 10px;
+  color: var(--wood-brown);
+}
+
+.create-post-label {
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #eeb63c;
+  font-size: 25px;
+}
+
+#create-post-topic-no-option {
+  font-size: 14px;
+  margin-bottom: 0px;
+  text-shadow: 0.2px 0 currentColor;
+  color: var(--oak-red);
+}
+
+.create-post-topic-search-option {
+  padding: 5px 10px;
+  font-size: 14px;
+  text-shadow: 0.2px 0 currentColor;
+  cursor: pointer;
+  color: var(--wood-brown);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.create-post-topic-search-option:hover {
+  background-color: #ffe5ad;
+}
+
+.create-post-topic-search-option p {
+  margin-bottom: 0px;
+  letter-spacing: 0.5px;
+}
+
+.create-post-error {
+  margin-top: 5px;
+}

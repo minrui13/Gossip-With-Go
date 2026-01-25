@@ -228,7 +228,7 @@ export default function PostPage() {
     try {
       setIsEditLoading(true);
       await deletePost(postInfo?.post_id ?? 0);
-      toast.success("post is successfully deleted! ", {
+      toast.success("Buzz is successfully deleted! ", {
         autoClose: 2000,
       });
       setTimeout(() => {
@@ -238,7 +238,7 @@ export default function PostPage() {
         navigate("/");
       }, 1000);
     } catch (e) {
-      toast.error("post is not deleted! error!", {
+      toast.error("Buzz is not deleted! error!", {
         autoClose: 2000,
       });
     } finally {
@@ -391,7 +391,7 @@ export default function PostPage() {
       setPostContent(result.content);
       setShowEditPost(false);
       setMenuAnchorEl(null);
-      toast.success(`Post is updated!`, {
+      toast.success(`Buzz is updated!`, {
         autoClose: 2000,
       });
     } catch (e) {
@@ -430,6 +430,7 @@ export default function PostPage() {
 
       <Loading
         isLoading={isEditLoading}
+            variant="success"
         style={{
           filter: "drop-shadow(0px 0px 10px #82828256)",
         }}
@@ -762,7 +763,7 @@ export default function PostPage() {
                 <div className="d-flex justify-content-end post-postpage-comment-edit-btn-div">
                   <button
                     type="button"
-                    //disabled
+                    disabled={isEditLoading}
                     className="btn comment-component-reply-btn  hazelnutbrown-hazelnutbrown-milkwhite honeyyellow-branchbrown-branchbrown-hover"
                     onClick={() => {
                       setShowEditPost(false);

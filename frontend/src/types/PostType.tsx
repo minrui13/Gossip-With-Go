@@ -1,3 +1,4 @@
+import exp from "constants";
 import { TagDefaultType } from "./TagType";
 import { SearchLimitOffset } from "./UtilsType";
 
@@ -47,6 +48,10 @@ export type IDLimitCursorSearch = {
   cursor: string | null;
   filter?: string;
 };
+
+export type TopicIDLimitCursor = IDLimitCursorSearch &{
+    topic_id: number;
+}
 
 export type IDLimitCursorSearchToken = IDLimitCursorSearch & {
   token: string | null;
@@ -98,4 +103,9 @@ export type PostComponent = PostDefaultResultType & {
   onNotLogin: () => void;
   tagsArr: TagDefaultType[];
   removePost: (postid: number) => void;
+};
+
+export type PostAddPayload = PostUpdate & PostURLUserID & {
+  token: string | null;
+  topic_id: number;
 };

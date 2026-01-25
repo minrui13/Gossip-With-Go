@@ -1,6 +1,7 @@
 package imagesRoute
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -20,7 +21,7 @@ func NewHandler(db *pgxpool.Pool) *Handler {
 
 func (h *Handler) Router(r *mux.Router) *mux.Router {
 	r.HandleFunc("/", h.GetAllImages).Methods("GET")
-	r.HandleFunc("/{id}", h.GetImageById).Methods("GET")
+	r.HandleFunc("/{id}", h.GetImageById).Methods("Post")
 
 	return r
 }
@@ -33,7 +34,7 @@ func (h *Handler) GetAllImages(w http.ResponseWriter, r *http.Request) {
 	//database error 500 status code
 	//same as res.send(500)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		util.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -42,7 +43,7 @@ func (h *Handler) GetAllImages(w http.ResponseWriter, r *http.Request) {
 		var u types.Image
 
 		if err := rows.Scan(&u.Image_ID, &u.Image_Name); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			util.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -50,7 +51,7 @@ func (h *Handler) GetAllImages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		util.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -64,11 +65,22 @@ func (h *Handler) GetImageById(w http.ResponseWriter, r *http.Request) {
 	//convert imageID to integer (check if valid integer)
 	id := mux.Vars(r)["id"]
 	imageID, err := strconv.Atoi(id)
-
+	//check for integer errors
 	if err != nil {
 		util.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
+
+	//only verified users can access the data
+	//check token and token header
+	authToken := r.Header.Get("Authorization")
+	//check if authHeader is empty
+	if authToken == "" {
+		util.WriteError(w, http.StatusUnauthorized, errors.New("Missing authorization header"))
+		return
+	}
+
+	//get dat afrom database
 	err = h.db.QueryRow(ctx, `SELECT image_id, image_name FROM profile_image WHERE image_id = $1`, imageID).
 		Scan(&image.Image_ID, &image.Image_Name)
 
