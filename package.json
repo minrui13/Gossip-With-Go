@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@mui/icons-material": "^7.3.7"
+    "@mui/icons-material": "^7.3.7",
+    "slugify": "^1.6.6"
   }
 }
