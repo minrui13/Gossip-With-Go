@@ -29,28 +29,6 @@ func DecodeUpvoteCursor(s string) (*types.DateUpvotesIDCursor, error) {
 	return &c, nil
 }
 
-func EncodeSumVotesCursor(c types.DateSumVotesCursor) (string, error) {
-	b, err := json.Marshal(c)
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(b), nil
-}
-
-func DecodeSumVotesCursor(s string) (*types.DateSumVotesCursor, error) {
-	b, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		return nil, err
-	}
-
-	var c types.DateSumVotesCursor
-	if err := json.Unmarshal(b, &c); err != nil {
-		return nil, err
-	}
-
-	return &c, nil
-}
-
 func EncodeSumVotesDateCursor(c types.SumVotesDateCursor) (string, error) {
 	b, err := json.Marshal(c)
 	if err != nil {
