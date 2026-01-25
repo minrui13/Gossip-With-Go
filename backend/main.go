@@ -16,8 +16,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	address 8080: missing port in address
-==> Exited with status 1
+	port := os.Getenv("PORT")
 
 	newServer := server.NewServer(port, dbPool)
 
