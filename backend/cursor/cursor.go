@@ -94,3 +94,25 @@ func DecodeAlphaCursor(s string) (*types.AlphaDateCursor, error) {
 
 	return &c, nil
 }
+
+func EncodeTopicCursor(c types.TopicDefaultCursor) (string, error) {
+	b, err := json.Marshal(c)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(b), nil
+}
+
+func DecodeTopicCursor(s string) (*types.TopicDefaultCursor, error) {
+	b, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return nil, err
+	}
+
+	var c types.TopicDefaultCursor	
+	if err := json.Unmarshal(b, &c); err != nil {
+		return nil, err
+	}
+
+	return &c, nil
+}

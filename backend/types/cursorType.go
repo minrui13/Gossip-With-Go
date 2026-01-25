@@ -23,3 +23,12 @@ type AlphaDateCursor struct {
 	Title        string `json:"title"`
 	Created_Date string `json:"created_date"`
 }
+
+
+type TopicDefaultCursor struct {
+	Followers_Count int    `json:"followers_count"`
+	Created_Date    string `json:"created_date"`
+	Topic_ID        *int   `json:"topic_id"`
+	Posts_Count      int    `json:"posts_count"`
+}
+
