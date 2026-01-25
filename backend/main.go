@@ -2,19 +2,13 @@ package main
 
 import (
 	"log"
+	"os"
 
-	"github.com/joho/godotenv"
-	"github.com/minrui13/backend/config"
 	db "github.com/minrui13/backend/database"
 	"github.com/minrui13/backend/server"
 )
 
 func main() {
-
-	//attempting to load env fle
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
-	}
 
 	//connecting the database
 	dbPool, err := db.Connect()
@@ -22,8 +16,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//init server
-	port := ":" + config.Envs.PORT
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // fallback for local testing
+	}
 
 	newServer := server.NewServer(port, dbPool)
 
