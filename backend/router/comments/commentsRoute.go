@@ -10,7 +10,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minrui13/backend/cursor"
 	"github.com/minrui13/backend/types"
@@ -114,6 +113,7 @@ func (h *Handler) GetMainCommentsByPostID(w http.ResponseWriter, r *http.Request
 		u.display_name,
 		i.image_name,
 		pc.post_id,
+		p.author_id,
 		pc.parent_comment_id,
 		pc.content,
 		pc.created_date,
@@ -142,6 +142,7 @@ func (h *Handler) GetMainCommentsByPostID(w http.ResponseWriter, r *http.Request
 		GROUP BY parent_comment_id
 		) cc ON cc.parent_comment_id = pc.comment_id
 		LEFT JOIN comments_votes cvv ON cvv.comment_id = pc.comment_id AND cvv.user_id = $1
+		INNER JOIN posts p ON p.post_id = pc.post_id
 		WHERE pc.post_id =  $2
 		`
 
@@ -222,7 +223,7 @@ func (h *Handler) GetMainCommentsByPostID(w http.ResponseWriter, r *http.Request
 		var created time.Time
 
 		if err := rows.Scan(&comment.Comment_ID, &comment.User_ID, &comment.Username, &comment.DisplayName, &comment.Image_Name, &comment.Post_ID,
-			&comment.Parent_Comment_ID, &comment.Content, &created, &comment.Vote_ID, &comment.Upvote_Count, &comment.Downvote_Count,
+			&comment.Post_User_ID, &comment.Parent_Comment_ID, &comment.Content, &created, &comment.Vote_ID, &comment.Upvote_Count, &comment.Downvote_Count,
 			&comment.Sum_Votes, &comment.Vote_Status, &comment.Reply_Count); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, err)
 			return
@@ -290,6 +291,7 @@ func (h *Handler) GetReplyByCommentId(w http.ResponseWriter, r *http.Request) {
 			u.display_name,
 			i.image_name,
 			pc.post_id,
+			p.author_id,
 			pc.parent_comment_id,
 			pc.content,
 			pc.created_date,
@@ -319,6 +321,7 @@ func (h *Handler) GetReplyByCommentId(w http.ResponseWriter, r *http.Request) {
 			) cc ON cc.parent_comment_id = pc.comment_id
 			LEFT JOIN comments_votes cvv ON cvv.comment_id = pc.comment_id AND cvv.user_id = $1
 			WHERE pc.parent_comment_id = $2 
+			INNER JOIN posts p ON p.post_id = pc.post_id
 			
 			UNION ALL
 
@@ -329,6 +332,7 @@ func (h *Handler) GetReplyByCommentId(w http.ResponseWriter, r *http.Request) {
 			u.display_name,
 			i.image_name,
 			pc.post_id,
+			p.author_id,
 			pc.parent_comment_id,
 			pc.content,
 			pc.created_date,
@@ -358,6 +362,7 @@ func (h *Handler) GetReplyByCommentId(w http.ResponseWriter, r *http.Request) {
 			) cc ON cc.parent_comment_id = pc.comment_id
 			LEFT JOIN comments_votes cvv ON cvv.comment_id = pc.comment_id AND cvv.user_id = $1
 			INNER JOIN all_replies ar ON pc.parent_comment_id = ar.comment_id
+			INNER JOIN posts p ON p.post_id = pc.post_id
 		)
 		SELECT *
 		FROM all_replies
@@ -377,7 +382,7 @@ func (h *Handler) GetReplyByCommentId(w http.ResponseWriter, r *http.Request) {
 		var comment types.CommentDefaultType
 		var created time.Time
 
-		if err := rows.Scan(&comment.Comment_ID, &comment.User_ID, &comment.Username, &comment.DisplayName, &comment.Image_Name, &comment.Post_ID,
+		if err := rows.Scan(&comment.Comment_ID, &comment.User_ID, &comment.Username, &comment.DisplayName, &comment.Image_Name, &comment.Post_ID, &comment.Post_User_ID,
 			&comment.Parent_Comment_ID, &comment.Content, &created, &comment.Vote_ID, &comment.Upvote_Count, &comment.Downvote_Count,
 			&comment.Sum_Votes, &comment.Vote_Status, &comment.Reply_Count); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, err)
@@ -406,6 +411,7 @@ func (h *Handler) GetCommentByCommentId(ctx context.Context, payload *types.Comm
 			u.display_name,
 			i.image_name,
 			pc.post_id,
+			p.author_id,
 			pc.parent_comment_id,
 			pc.content,
 			pc.created_date,
@@ -434,8 +440,9 @@ func (h *Handler) GetCommentByCommentId(ctx context.Context, payload *types.Comm
 			GROUP BY parent_comment_id
 			) cc ON cc.parent_comment_id = pc.comment_id
 			LEFT JOIN comments_votes cvv ON cvv.comment_id = pc.comment_id AND cvv.user_id = $1
+			INNER JOIN posts p ON p.post_id = pc.post_id
 			WHERE pc.comment_id = $2 
-			`, payload.User_ID, payload.Comment_ID).Scan(&comment.Comment_ID, &comment.User_ID, &comment.Username, &comment.DisplayName, &comment.Image_Name, &comment.Post_ID,
+			`, payload.User_ID, payload.Comment_ID).Scan(&comment.Comment_ID, &comment.User_ID, &comment.Username, &comment.DisplayName, &comment.Image_Name, &comment.Post_ID, &comment.Post_User_ID,
 		&comment.Parent_Comment_ID, &comment.Content, &created, &comment.Vote_ID, &comment.Upvote_Count, &comment.Downvote_Count,
 		&comment.Sum_Votes, &comment.Vote_Status, &comment.Reply_Count)
 
@@ -555,26 +562,24 @@ func (h *Handler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	getCommentPayload := new(types.CommentUserId)
+	var userID int
 
 	//get data from db
 	err = h.db.QueryRow(ctx,
 		`UPDATE posts_comments
-			SET content = $1,
+			SET content = $1
 			WHERE comment_id = $2
-			RETURNING parent_comment_id, user_id`,
-		payload.Content, commentIDInt).Scan(getCommentPayload.Comment_ID, getCommentPayload.User_ID)
-
-	if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-		util.WriteError(w, http.StatusConflict, pgErr)
-		return
-	}
+			RETURNING user_id`,
+		payload.Content, commentIDInt).Scan(&userID)
 
 	if err != nil {
 		util.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
+	getCommentPayload := new(types.CommentUserId)
+	getCommentPayload.User_ID = userID
+	getCommentPayload.Comment_ID = commentIDInt
 	newParentReply, err := h.GetCommentByCommentId(ctx, getCommentPayload)
 
 	if err != nil {
@@ -589,15 +594,6 @@ func (h *Handler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	//only verified users can access the data
-	//check token and token header
-	authToken := r.Header.Get("Authorization")
-	//check if authHeader is empty
-	if authToken == "" {
-		util.WriteError(w, http.StatusUnauthorized, errors.New("Missing authorization header"))
-		return
-	}
-
 	//get comment_id from params
 	commentID := mux.Vars(r)["comment_id"]
 	//convert commentID to integer (check if valid integer)
@@ -608,30 +604,23 @@ func (h *Handler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	getCommentPayload := new(types.CommentUserId)
-
 	//get data from db
-	err = h.db.QueryRow(ctx,
-		`DELETE FROM posts_comments WHERE comment_id=$1
-			RETURNING parent_comment_id, user_id`,
-		commentIDInt).Scan(getCommentPayload.Comment_ID, getCommentPayload.User_ID)
-
-	if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-		util.WriteError(w, http.StatusConflict, pgErr)
-		return
-	}
+	response, err := h.db.Exec(ctx,
+		`DELETE FROM posts_comments WHERE comment_id=$1`,
+		commentIDInt)
 
 	if err != nil {
 		util.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	newParentReply, err := h.GetCommentByCommentId(ctx, getCommentPayload)
-
-	if err != nil {
-		util.WriteError(w, http.StatusInternalServerError, err)
+	if response.RowsAffected() == 0 {
+		util.WriteError(w, http.StatusNotFound, errors.New("comment not deleted"))
 		return
 	}
 
-	util.WriteJSON(w, http.StatusCreated, newParentReply)
+	util.WriteJSON(w, http.StatusCreated, map[string]any{
+		"message":    "Comment deleted successfully",
+		"comment_id": commentIDInt,
+	})
 }

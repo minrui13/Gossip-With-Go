@@ -7,6 +7,7 @@ type CommentDefaultType struct {
 	DisplayName       string `json:"display_name"`
 	Image_Name        string `json:"image_name"`
 	Post_ID           int    `json:"post_id"`
+	Post_User_ID      int    `json:"post_user_id"`
 	Parent_Comment_ID *int   `json:"parent_comment_id"`
 	Content           string `json:"content"`
 	Created_Date      string `json:"created_date"`
@@ -25,4 +26,9 @@ type CommentContent struct {
 type CommentUserId struct {
 	Comment_ID int `json:"comment_id"`
 	User_ID    int `json:"user_id"`
+}
+
+type CommentDeleteResult struct {
+	Comment_ID        int `json:"comment_id"`
+	Parent_Comment_ID int `json:"parent_comment_id"`
 }
