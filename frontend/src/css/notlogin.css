@@ -1,0 +1,36 @@
+.not-login-container {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: 50%;
+  z-index: 999;
+  filter: drop-shadow(0px 0px 10px #65656530);
+  background-color: var(--milk-white);
+  padding: 40px;
+  border-radius: 15px;
+  width: 40vw;
+  height: 50vh;
+}
+
+.not-login-heading {
+    color: #f8b72a;
+    font-family: 'zabal';
+} 
+
+.not-login-note {
+  font-size: 14px;
+  margin-top: 10px;
+  font-weight: 500;
+  margin-bottom: 0px;
+  color: var(--wood-brown);
+  text-align: center;
+}
+
+.not-login-note a {
+  color: var(--caramel-brown);
+}
+
+.not-login-img{
+    width: 140px;
+    filter: drop-shadow(0px 0px 5px rgba(174, 173, 173, 0.2));
+}

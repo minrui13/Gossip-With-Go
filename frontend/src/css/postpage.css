@@ -1,0 +1,206 @@
+#post-page-container {
+  padding: 40px 40px;
+}
+
+#post-page-main-div {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.post-page-post-main-div {
+  padding: 40px 40px;
+  width: 100%;
+  background-color: #ffecc6;
+  border-radius: 20px;
+  transform: scale(1);
+  transition: transform 0.3s cubic-bezier(0, -0.03, 0.2, 0.99);
+  transition: background-color 0.3s cubic-bezier(0, -0.03, 0.2, 0.99);
+  filter: drop-shadow(0px 0px 5px rgba(135, 135, 135, 0.1));
+}
+
+#post-page-comments-main-div {
+  padding: 20px 0px 40px 30px;
+}
+
+.post-page-post-topic-div {
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.post-page-post-topic-div i {
+  color: #c48a00;
+}
+
+.post-page-post-topic-div p {
+  font-size: 13px;
+  font-weight: 600;
+  color: #c48a00;
+  text-decoration: underline;
+  text-underline-offset: 2.5px;
+  text-decoration-thickness: 1.4px;
+}
+
+.post-page-post-created-date {
+  color: #e8c47c;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.post-page-post-username-div {
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.post-page-post-username-img {
+  background-color: white;
+  padding: 2px;
+  border-radius: 50%;
+  border: 1.5px solid var(--caramel-brown);
+  aspect-ratio: 1/1;
+  filter: drop-shadow(0px 0px 2px rgba(255, 237, 197, 0.2));
+}
+
+.post-page-post-username-img img {
+  aspect-ratio: 1/1;
+  width: 30px;
+  filter: drop-shadow(0px 0px 2.5px var(--honey-yellow));
+}
+
+.post-page-post-display-name {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--caramel-brown);
+  text-shadow: 0.2px 0 currentColor;
+  font-family: "Figtree";
+  filter: drop-shadow(0px 0px 5px rgba(31, 18, 6, 0.1));
+  letter-spacing: 1px;
+}
+
+.post-page-post-username {
+  font-size: 13px;
+  margin-bottom: 0px;
+  position: relative;
+  bottom: 5px;
+  font-family: "Figtree";
+  text-shadow: 0.2px 0 currentColor;
+  letter-spacing: 0.5px;
+  color: rgba(140, 86, 38, 0.2);
+}
+
+.post-page-post-title {
+  color: var(--wood-brown);
+  font-family: zabal;
+  margin-bottom: 8px;
+}
+
+.post-page-post-title-content-div {
+  margin-bottom: 10px;
+}
+
+.post-page-post-content-div {
+  margin-top: 5px;
+}
+.post-page-post-content {
+  text-shadow: 0.2px 0 currentColor;
+  color: #693b22;
+  white-space: pre-line;
+}
+
+.post-page-post-bottom-footer {
+  gap: 20px;
+  color: var(--wood-brown);
+}
+
+.post-page-post-bottom-footer-div {
+  background-color: #f9d0779c;
+  padding: 5px 15px;
+  border-radius: 25px;
+}
+
+.post-page-post-bottom-footer-div p {
+  font-weight: 500;
+}
+
+.post-page-post-rate-icon {
+  transition: color 0.2s cubic-bezier(0, 0, 0.2, 0.99);
+}
+
+.post-page-post-rate-icon.disabled,
+.post-page-bookmark-icon.disabled {
+  color: #4326168f;
+}
+
+.post-page-post-rate-div {
+  gap: 10px;
+}
+
+.post-page-post-rate-div div {
+  gap: 2px;
+}
+.post-page-add-comment-div {
+  position: relative;
+}
+
+.post-page-comment-textfield-div {
+  margin: 15px 5px 0px 40px;
+}
+
+.post-page-comment-textfield-error {
+  color: var(--oak-red);
+  font-size: 13px;
+  margin: 0px 0px 0px 5px;
+}
+
+.post-page-comment-textfield-end-adornment {
+  font-size: 13px;
+  margin: 0px 5px 0px 0px;
+  color: rgba(128, 128, 128, 0.5);
+}
+
+.post-page-add-comment-div .post-page-post-comment-div {
+  gap: 3px;
+}
+
+.post-page-post-comment-div p {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.post-page-post-comment-div:not(.disabled):hover .post-page-post-comment-icon {
+  color: var(--honey-yellow);
+}
+
+.post-page-post-comment-div:not(.disabled):hover .post-page-post-comment-label {
+  color: var(--honey-yellow);
+}
+
+.post-page-post-comment-div {
+  cursor: pointer;
+}
+
+.post-page-post-bottom-footer-icon:not(.disabled):hover {
+  color: var(--honey-yellow);
+}
+
+.post-page-post-bottom-footer-icon.selected {
+  color: var(--caramel-brown);
+}
+
+.post-page-comments-load-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 30px;
+}
+
+.post-page-load-more-btn {
+  color: #542f1b;
+  background-color: var(--canary-yellow);
+  border: 1.7px solid #542f1b;
+}
+
+.post-page-load-more-btn:hover {
+  background-color: var(--honey-yellow);
+  color: #542f1b;
+  border: 1.7px solid #542f1b;
+}

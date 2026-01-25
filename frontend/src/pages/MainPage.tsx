@@ -1,54 +1,61 @@
-import {
-  Autocomplete,
-  Chip,
-  InputAdornment,
-  MenuItem,
-  Select,
-  TextField,
-} from "@mui/material";
+import { MenuItem, Select } from "@mui/material";
 import { useAuth } from "../auth/Auth";
-import NavBar from "../components/NavBar";
-import SideBar from "../components/SideBar";
-import { NavSearchOptions } from "../types/ComponentType";
 import { useEffect, useRef, useState } from "react";
 import {
+  deletePost,
   getPostsByFollowAndPopularity,
   getPostsByPopularityAndSearch,
 } from "../api/postsApi";
 import "../css/mainpage.css";
-import { Search } from "@mui/icons-material";
-import {
-  PostDefaultResultType,
-  PostIsFollowingResultType
-} from "../types/PostType";
+import { PostIsFollowingResultType } from "../types/PostType";
 import Post from "../components/Post";
 import { calculateDate } from "../utils/UtilsFunction";
 import Loading from "../components/Loading";
 import BuzzBeeScrollToTop from "../images/BeeScrollToTop.PNG";
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from "react-router-dom";
+import NotLogin from "../components/NotLogin";
+import { getAllTags } from "../api/tagApi";
+import { TagDefaultType } from "../types/TagType";
+import { toast } from "react-toastify";
 
 export default function MainPage() {
   const { user } = useAuth();
+  const [showNotLogin, setShowNotLogin] = useState(false);
   const [postArr, setPostArr] = useState<PostIsFollowingResultType[]>([]);
   const limit = 10;
   const [isMore, setIsMore] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
-  const [initiate, setInitiate] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [sortByValue, setSortByValue] = useState("buzzing");
   const [showScrollToTop, setShowScrollToTop] = useState(false);
-   const [searchParams, setSearchParams] = useSearchParams();
-  
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tagsArr, setTagArr] = useState<TagDefaultType[]>([]);
   const mainPageDivRef = useRef<HTMLDivElement | null>(null);
+  const sortData = [
+    { value: "buzzing", name: "Buzzing" },
+    { value: "alpha", name: "A-Z" },
+    { value: "new", name: "New" },
+  ];
+  const navigate = useNavigate();
 
   useEffect(() => {
-    retrievePost();
-    setInitiate(true);
+    retrieveAllTags();
     const mainDiv = mainPageDivRef.current;
     if (!mainDiv) return;
 
     const handleScroll = () => {
-      setShowScrollToTop(mainDiv.scrollTop > 300);
+      if (mainDiv.scrollTop > 300) {
+        document
+          .getElementById("main-page-scroll-to-top-btn")
+          ?.classList.remove("fade-out");
+      } else {
+        document
+          .getElementById("main-page-scroll-to-top-btn")
+          ?.classList.add("fade-out");
+      }
+      setTimeout(() => {
+        setShowScrollToTop(mainDiv.scrollTop > 300);
+      }, 200);
     };
 
     mainDiv.addEventListener("scroll", handleScroll);
@@ -59,6 +66,13 @@ export default function MainPage() {
   useEffect(() => {
     retrievePost();
   }, [sortByValue]);
+
+  useEffect(() => {
+    const sortBy = searchParams.get("sortBy");
+    if (sortData.some((ele) => ele.value == sortBy)) {
+      setSortByValue(sortBy ?? "");
+    }
+  }, [searchParams.get("sortBy")]);
 
   async function retrievePost() {
     try {
@@ -84,11 +98,20 @@ export default function MainPage() {
           ...ele,
           created_date: calculateDate(ele.created_date),
         }));
-        if (!initiate) {
-          setPostArr(formattedResult);
-        } else {
-          setPostArr((prev) => [...prev, ...formattedResult]);
-        }
+
+        setPostArr((prev) => {
+          const prevArr = [...prev];
+          formattedResult.forEach((formattedEle) => {
+            if (
+              !prevArr.some(
+                (prevEle) => prevEle.post_id == formattedEle.post_id,
+              )
+            ) {
+              prevArr.push(formattedEle);
+            }
+          });
+          return prevArr;
+        });
       } else {
         //try to get token
         const token = localStorage.getItem("token");
@@ -114,14 +137,21 @@ export default function MainPage() {
           ...ele,
           created_date: calculateDate(ele.created_date),
         }));
-        if (!initiate) {
-          setPostArr(formattedResult);
-        } else {
-          setPostArr((prev) => [...prev, ...formattedResult]);
-        }
+        setPostArr((prev) => {
+          const prevArr = [...prev];
+          formattedResult.forEach((formattedEle) => {
+            if (
+              !prevArr.some(
+                (prevEle) => prevEle.post_id == formattedEle.post_id,
+              )
+            ) {
+              prevArr.push(formattedEle);
+            }
+          });
+          return prevArr;
+        });
       }
     } catch (e) {
-      console.error(e);
     } finally {
       setTimeout(() => {
         setIsLoading(false);
@@ -133,11 +163,59 @@ export default function MainPage() {
     setCursor(null);
     setPostArr([]);
     setIsMore(false);
-    setSortByValue(val);
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.set("sortBy", val);
+      params.delete("cursor");
+      return params;
+    });
+  }
+
+  function displayNotLogin() {
+    setShowNotLogin(true);
+  }
+
+  async function retrieveAllTags() {
+    try {
+      const result = await getAllTags();
+      setTagArr(result);
+    } catch (e) {
+      toast.error("cannot get tags", { autoClose: 2000 });
+    }
+  }
+
+  async function removePost(postid: number) {
+    try {
+      setIsLoading(true);
+      const result = await deletePost(postid);
+
+      toast.success("post is successfully deleted!", {
+        autoClose: 2000,
+      });
+      setTimeout(() => {
+        setPostArr((prev) =>
+          prev.filter((post) => post.post_id !== result.post_id),
+        );
+      }, 2000);
+    } catch (e) {
+      toast.error("post is not deleted! error!", {
+        autoClose: 2000,
+      });
+    } finally {
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
+    }
   }
 
   return (
     <div className="main-page-container">
+      <NotLogin
+        isShown={showNotLogin}
+        onClose={() => {
+          setShowNotLogin(false);
+        }}
+      />
       <div className="main-page-main-div" ref={mainPageDivRef}>
         <div className="main-page-filter-div d-flex justify-content-end pe-5 pt-2">
           <Select
@@ -192,13 +270,14 @@ export default function MainPage() {
               changeSortByFilter(e.target.value);
             }}
           >
-            <MenuItem value="buzzing">Buzzing</MenuItem>
-            <MenuItem value="alpha">A-Z</MenuItem>
-            <MenuItem value="new"> New</MenuItem>
+            {sortData.map((sortEle) => (
+              <MenuItem value={sortEle.value}>{sortEle.name}</MenuItem>
+            ))}
           </Select>
         </div>
         {showScrollToTop && (
           <button
+            id="main-page-scroll-to-top-btn"
             className={`main-page-scroll-to-top btn main-page-scroll-to-top-btn ${
               showScrollToTop ? "show" : ""
             }`}
@@ -214,7 +293,8 @@ export default function MainPage() {
           >
             <img
               src={BuzzBeeScrollToTop}
-              className="main-page-scroll-to-top-img"
+              id=""
+              className="main-page-scroll-to-top-img fade-in"
             />
           </button>
         )}
@@ -224,11 +304,15 @@ export default function MainPage() {
           <div className="main-page-post-div">
             {postArr.map((postEle) => (
               <Post
+                key={postEle.post_id}
                 post_id={postEle.post_id}
                 post_url={postEle.post_url}
                 user_id={postEle.user_id}
                 username={postEle.username}
+                display_name={postEle.display_name}
                 user_image={postEle.user_image}
+                topic_id={postEle.topic_id}
+                topic_user_id={postEle.topic_user_id}
                 topic_name={postEle.topic_name}
                 category_icon={postEle.category_icon}
                 tag_name={postEle.tag_name}
@@ -244,17 +328,16 @@ export default function MainPage() {
                 comment_count={postEle.comment_count}
                 bookmark_id={postEle.bookmark_id}
                 is_bookmarked={postEle.is_bookmarked}
+                onNotLogin={displayNotLogin}
+                tagsArr={tagsArr}
+                removePost={removePost}
               />
             ))}
             {isMore &&
               (isLoading ? (
                 <Loading
                   isLoading={isLoading}
-                  style={{
-                    position: "static",
-                    transform: "none",
-                    color: "var(--canary-yellow)",
-                  }}
+                  position="static"
                   variant="success"
                 />
               ) : (
