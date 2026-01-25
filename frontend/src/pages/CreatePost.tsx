@@ -13,7 +13,6 @@ import Loading from "../components/Loading";
 import { toast } from "react-toastify";
 import { nanoid } from "nanoid";
 import { addPost } from "../api/postsApi";
-import slugify from "slugify";
 import {
   Autocomplete,
   InputAdornment,
@@ -103,10 +102,7 @@ export default function CreatePost() {
       const token = localStorage.getItem("token");
       const tagID =
         tagArr.find((ele) => ele.tag_name == selectedTagVal)?.tag_id ?? null;
-      const postURL = `${slugify(postTitleInput, {
-        lower: true,
-        strict: true,
-      })}-${nanoid(5)}`;
+      const postURL = `${postTitleInput .toLowerCase().trim().replace(/\s+/g, "-")}-${nanoid(5)}`;
 
       const payload = {
         tag_id: tagID,
