@@ -7,7 +7,7 @@ import (
 	"github.com/minrui13/backend/types"
 )
 
-func EncodeUpvoteCursor(c types.UpvotesPostCursor) (string, error) {
+func EncodeUpvoteCursor(c types.DateUpvotesIDCursor) (string, error) {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return "", err
@@ -15,13 +15,13 @@ func EncodeUpvoteCursor(c types.UpvotesPostCursor) (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func DecodeUpvoteCursor(s string) (*types.UpvotesPostCursor, error) {
+func DecodeUpvoteCursor(s string) (*types.DateUpvotesIDCursor, error) {
 	b, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		return nil, err
 	}
 
-	var c types.UpvotesPostCursor
+	var c types.DateUpvotesIDCursor
 	if err := json.Unmarshal(b, &c); err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func DecodeUpvoteCursor(s string) (*types.UpvotesPostCursor, error) {
 	return &c, nil
 }
 
-func EncodeSumVotesCursor(c types.SumVotesPostCursor) (string, error) {
+func EncodeSumVotesDateCursor(c types.SumVotesDateCursor) (string, error) {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return "", err
@@ -37,13 +37,13 @@ func EncodeSumVotesCursor(c types.SumVotesPostCursor) (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func DecodeSumVotesCursor(s string) (*types.SumVotesPostCursor, error) {
+func DecodeSumVotesDateCursor(s string) (*types.SumVotesDateCursor, error) {
 	b, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		return nil, err
 	}
 
-	var c types.SumVotesPostCursor
+	var c types.SumVotesDateCursor
 	if err := json.Unmarshal(b, &c); err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func DecodeSumVotesCursor(s string) (*types.SumVotesPostCursor, error) {
 	return &c, nil
 }
 
-func EncodeDateCursor(c types.DatePostCursor) (string, error) {
+func EncodeDateCursor(c types.DateCursor) (string, error) {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return "", err
@@ -59,13 +59,35 @@ func EncodeDateCursor(c types.DatePostCursor) (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func DecodeDateCursor(s string) (*types.DatePostCursor, error) {
+func DecodeDateCursor(s string) (*types.DateCursor, error) {
 	b, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		return nil, err
 	}
 
-	var c types.DatePostCursor
+	var c types.DateCursor
+	if err := json.Unmarshal(b, &c); err != nil {
+		return nil, err
+	}
+
+	return &c, nil
+}
+
+func EncodeAlphaCursor(c types.AlphaDateCursor) (string, error) {
+	b, err := json.Marshal(c)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(b), nil
+}
+
+func DecodeAlphaCursor(s string) (*types.AlphaDateCursor, error) {
+	b, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return nil, err
+	}
+
+	var c types.AlphaDateCursor
 	if err := json.Unmarshal(b, &c); err != nil {
 		return nil, err
 	}

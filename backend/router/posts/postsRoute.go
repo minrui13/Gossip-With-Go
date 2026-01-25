@@ -1,6 +1,7 @@
 package postsRouter
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -26,12 +27,18 @@ func NewHandler(db *pgxpool.Pool) *Handler {
 func (h *Handler) Router(r *mux.Router) *mux.Router {
 	//Get all posts
 	r.HandleFunc("/allPostsByFilter/{user_id}", h.GetAllPosts).Methods("POST")
-	//Get posts by id
-	r.HandleFunc("/postsByID/{user_id}/{post_id}", h.GetPostById).Methods("POST")
+	//Get post by id
+	r.HandleFunc("/getPostByID/{user_id}", h.GetPostById).Methods("POST")
+	//Get post by url
+	r.HandleFunc("/getPostByURL/{user_id}/{post_url}", h.GetPostByURL).Methods("POST")
 	//Get most popular posts
 	r.HandleFunc("/getPostsByPopularityAndFollow/{user_id}", h.FilterByFollowAndPopularity).Methods("POST")
-	//Get most popular posts
+	//Get posts from topics that user follows
 	r.HandleFunc("/getPostsByFollow/{user_id}", h.FilterByFollow).Methods("POST")
+	//Update posts
+	r.HandleFunc("/updatePost/{post_id}", h.UpdatePost).Methods("PUT")
+	//Delete posts
+	r.HandleFunc("/deletePost/{post_id}", h.DeletePost).Methods("DELETE")
 
 	return r
 }
@@ -42,6 +49,7 @@ func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	limit := query.Get("limit")
 	cursorParam := query.Get("cursor")
+	sortBy := query.Get("sortBy")
 	search := "%" + query.Get("search") + "%"
 
 	//convert limitQuery to integer (check if valid integer)
@@ -51,9 +59,9 @@ func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 		util.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
-
 	//add one for later on to check if there is more post
 	limitAddOne := limitQuery + 1
+
 	//get id from params
 	//pass in 0 if non signup or login users
 	id := mux.Vars(r)["user_id"]
@@ -66,9 +74,19 @@ func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//check cursor
-	var decodedCursor *types.UpvotesPostCursor
+	var decodedCursor any
 	if cursorParam != "" {
-		decodedCursor, err = cursor.DecodeUpvoteCursor(cursorParam)
+		//buzzing - post =  then sum_of_votes then created date first
+		//sum of votes over num of upvotes because a post can have a lot of upvotes
+		//but the downvotes might contradict whether it is actally the best
+		//new -  post =   then created date first then sum_of_votes
+		switch sortBy {
+		case "alpha":
+			decodedCursor, err = cursor.DecodeAlphaCursor(cursorParam)
+		default:
+			decodedCursor, err = cursor.DecodeSumVotesDateCursor(cursorParam)
+		}
+
 		if err != nil {
 			util.WriteError(w, http.StatusBadRequest, err)
 			return
@@ -85,9 +103,13 @@ func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 	//order by created date and then add limit and offset
 	baseSQLStatement := `SELECT 
 		p.post_id,
+		p.post_url,
 		u.user_id, 
 		u.username, 
+		u.display_name,
 		i.image_name, 
+		t.topic_id, 
+		t.creator_id, 
 		t.topic_name, 
 		c.icon_name as category_icon, 
 		tags.tag_name, 
@@ -99,8 +121,9 @@ func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 		pvv.post_vote_id as vote_id,
 		COALESCE(pv.num_of_upvotes, 0) as num_of_upvotes,
 		COALESCE(pv.num_of_downvotes, 0) as num_of_downvotes,
+		COALESCE(pv.sum_of_votes, 0) AS sum_of_votes,
 		COALESCE(pvv.vote_type, 0) AS vote_status,
-		COALESCE(pc.num_of_comments, 0) AS num_comments,
+		COALESCE(pc.num_of_comments, 0) AS num_of_comments,
 		pb.post_bookmark_id as bookmark_id, 
 		CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked
 		FROM posts p 
@@ -110,50 +133,112 @@ func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 		INNER JOIN topics t ON t.topic_id = p.topic_id
 		INNER JOIN categories c ON t.category_id = c.category_id
 		LEFT JOIN (
-      SELECT post_id, 
-      COUNT(post_vote_id) FILTER (WHERE vote_type = 1) as num_of_upvotes,
-      COUNT(post_vote_id) FILTER (WHERE vote_type = -1) as num_of_downvotes 
-      FROM posts_votes
-      GROUP BY post_id
-    ) pv ON p.post_id = pv.post_id 
+			SELECT post_id, 
+			COUNT(post_vote_id) FILTER (WHERE vote_type = 1) as num_of_upvotes,
+			COUNT(post_vote_id) FILTER (WHERE vote_type = -1) as num_of_downvotes,
+			SUM(vote_type) as sum_of_votes 
+			FROM posts_votes
+			GROUP BY post_id
+    	) pv ON p.post_id = pv.post_id 
 		LEFT JOIN posts_votes pvv ON p.post_id = pvv.post_id AND pvv.user_id = $1
 		LEFT JOIN (
-      SELECT post_id,
-      COUNT(comment_id) as num_of_comments 
-      FROM posts_comments
-      GROUP BY post_id
-    ) pc ON pc.post_id = p.post_id
+			SELECT post_id,
+			COUNT(comment_id) as num_of_comments 
+			FROM posts_comments
+			GROUP BY post_id
+    	) pc ON pc.post_id = p.post_id
 		LEFT JOIN posts_bookmarks pb ON pb.post_id = p.post_id AND pb.user_id = $1
 		WHERE LOWER(p.title) LIKE $2 
 		`
 	if cursorParam == "" {
+		var orderStatement string
+		switch sortBy {
+		case "new":
+			orderStatement = `  ORDER BY p.created_date DESC, COALESCE(pv.sum_of_votes,0) DESC, COALESCE(pc.num_of_comments, 0) DESC, p.post_id DESC `
+		case "alpha":
+			orderStatement = ` ORDER BY p.title ASC,  p.created_date DESC`
+		default:
+			orderStatement = ` ORDER BY COALESCE(pv.sum_of_votes,0) DESC, COALESCE(pc.num_of_comments, 0) DESC, p.created_date DESC, p.post_id DESC  `
+		}
 		SQLStatement := baseSQLStatement + `
-		GROUP BY p.post_id, u.user_id, u.username, i.image_name, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
-		pv.num_of_downvotes, pc.num_of_comments
-		ORDER BY p.created_date DESC, num_of_upvotes DESC
-		LIMIT $3`
+		GROUP BY p.post_id, p.post_url, u.user_id, u.username, u.display_name, i.image_name, t.topic_id, t.creator_id, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
+		pv.num_of_downvotes, pc.num_of_comments, pv.sum_of_votes ` + orderStatement + ` LIMIT $3`
 		rows, err = h.db.Query(ctx, SQLStatement, userID, search, limitAddOne)
 	} else {
-		SQLStatement := baseSQLStatement + `
-		AND (
-			p.created_date < $3
-			OR (p.created_date = $3 AND num_of_upvotes < $4)
-			OR (p.created_date = $3 AND num_of_upvotes = $4)
-		)
-		GROUP BY p.post_id, u.user_id, u.username, i.image_name, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
-		pv.num_of_downvotes, pc.num_of_comments
-		ORDER BY p.created_date DESC, num_of_upvotes DESC
-		LIMIT $5`
+		switch d := decodedCursor.(type) {
+		case *types.SumVotesDateCursor:
+			var SQLStatement string
+			d = decodedCursor.(*types.SumVotesDateCursor)
+			switch sortBy {
+			case "new":
+				SQLStatement = baseSQLStatement + `
+				AND (
+					p.created_date < $3
+					OR (p.created_date = $3 AND COALESCE(pv.sum_of_votes,0) < $4)
+					OR (p.created_date = $3 AND COALESCE(pv.sum_of_votes,0) = $4 AND COALESCE(pc.num_of_comments, 0) < $5)
+					OR (p.created_date = $3 AND COALESCE(pv.sum_of_votes,0) = $4 AND COALESCE(pc.num_of_comments, 0) = $5 AND p.post_id < $6)
+				)
+				GROUP BY p.post_id, p.post_url, u.user_id, u.username, u.display_name, i.image_name, t.topic_id, t.creator_id, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
+				pv.num_of_downvotes, pc.num_of_comments, pv.sum_of_votes
+				ORDER BY p.created_date DESC, COALESCE(pv.sum_of_votes,0) DESC, COALESCE(pc.num_of_comments, 0) DESC, p.post_id DESC LIMIT $7`
+				rows, err = h.db.Query(
+					ctx,
+					SQLStatement,
+					userID,
+					search,
+					d.Created_Date,
+					d.Sum_Votes_Count,
+					d.Comment_Count,
+					d.Post_ID,
+					limitAddOne,
+				)
+			default:
+				SQLStatement = baseSQLStatement + `
+				AND (
+					COALESCE(pv.sum_of_votes,0) < $3
+					OR (COALESCE(pv.sum_of_votes,0) = $3 AND COALESCE(pc.num_of_comments, 0) < $4)
+					OR (COALESCE(pv.sum_of_votes,0) = $3 AND COALESCE(pc.num_of_comments, 0) = $4 AND p.created_date < $5)
+					OR (COALESCE(pv.sum_of_votes,0) = $3 AND COALESCE(pc.num_of_comments, 0) = $4 AND p.created_date = $5 AND p.post_id < $6)
+				)
+				GROUP BY p.post_id, p.post_url, u.user_id, u.username, u.display_name, i.image_name,t.topic_id, t.creator_id, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
+				pv.num_of_downvotes, pc.num_of_comments, pv.sum_of_votes
+				ORDER BY COALESCE(pv.sum_of_votes,0) DESC, COALESCE(pc.num_of_comments, 0) DESC, p.created_date DESC, p.post_id DESC
+				LIMIT $7
+			`
+				rows, err = h.db.Query(
+					ctx,
+					SQLStatement,
+					userID,
+					search,
+					d.Sum_Votes_Count,
+					d.Comment_Count,
+					d.Created_Date,
+					d.Post_ID,
+					limitAddOne,
+				)
+			}
+		case *types.AlphaDateCursor:
+			d = decodedCursor.(*types.AlphaDateCursor)
+			SQLStatement := baseSQLStatement + `
+			AND (
+				p.title > $4
+				OR (p.title = $4 AND p.created_date < $3)
+			)
+			GROUP BY p.post_id, p.post_url, u.user_id, u.username, u.display_name, i.image_name, t.topic_id, t.creator_id, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
+			pv.num_of_downvotes, pc.num_of_comments, pv.sum_of_votes
+			ORDER BY p.title ASC, p.created_date DESC
+			LIMIT $5`
+			rows, err = h.db.Query(
+				ctx,
+				SQLStatement,
+				userID,
+				search,
+				d.Created_Date,
+				d.Title,
+				limitAddOne,
+			)
+		}
 
-		rows, err = h.db.Query(
-			ctx,
-			SQLStatement,
-			userID,
-			search,
-			decodedCursor.Created_Date,
-			decodedCursor.Upvotes_Count,
-			limitAddOne,
-		)
 	}
 
 	//database error 500 status code
@@ -163,13 +248,13 @@ func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var postsArr []types.PostDefaultResult
+	var postsArr []types.PostSumVotesResult
 	for rows.Next() {
-		var post types.PostDefaultResult
+		var post types.PostSumVotesResult
 		var created time.Time
 
-		if err := rows.Scan(&post.Post_ID, &post.User_ID, &post.Username, &post.User_Image, &post.Topic_Name, &post.Category_Icon, &post.Tag_Name, &post.Tag_Icon, &post.Tag_Description,
-			&post.Title, &post.Content, &created, &post.Vote_ID, &post.Upvote_Count, &post.Downvote_Count, &post.Vote_Status, &post.Comment_Count, &post.Bookmark_ID, &post.Is_Bookmarked); err != nil {
+		if err := rows.Scan(&post.Post_ID, &post.Post_URL, &post.User_ID, &post.Username, &post.DisplayName, &post.User_Image, &post.Topic_ID, &post.Topic_User_ID, &post.Topic_Name, &post.Category_Icon, &post.Tag_Name, &post.Tag_Icon, &post.Tag_Description,
+			&post.Title, &post.Content, &created, &post.Vote_ID, &post.Upvote_Count, &post.Downvote_Count, &post.Sum_Votes, &post.Vote_Status, &post.Comment_Count, &post.Bookmark_ID, &post.Is_Bookmarked); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -181,12 +266,25 @@ func (h *Handler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 	var nextCursor *string
 	if len(postsArr) > limitQuery {
 		last := postsArr[limitQuery-1]
-		c, err := cursor.EncodeUpvoteCursor(types.UpvotesPostCursor{
-			Created_Date:  last.Created_Date,
-			Upvotes_Count: last.Upvote_Count,
-		})
-		if err == nil {
-			nextCursor = &c
+		switch sortBy {
+		case "alpha":
+			c, err := cursor.EncodeAlphaCursor(types.AlphaDateCursor{
+				Created_Date: last.Created_Date,
+				Title:        last.Title,
+			})
+			if err == nil {
+				nextCursor = &c
+			}
+		default:
+			c, err := cursor.EncodeSumVotesDateCursor(types.SumVotesDateCursor{
+				Sum_Votes_Count: last.Sum_Votes,
+				Created_Date:    last.Created_Date,
+				Comment_Count:   last.Comment_Count,
+				Post_ID:         &last.Post_ID,
+			})
+			if err == nil {
+				nextCursor = &c
+			}
 		}
 		postsArr = postsArr[:limitQuery]
 	} else {
@@ -227,9 +325,13 @@ func (h *Handler) GetPostById(w http.ResponseWriter, r *http.Request) {
 	err = h.db.QueryRow(ctx,
 		`SELECT 
 		p.post_id, 
+		p.post_url,
 		u.user_id,
 		u.username, 
+		u.display_name,
 		i.image_name, 
+		t.topic_id,
+		t.creator_id,
 		t.topic_name, 
 		c.icon_name as category_icon, 
 		tags.tag_name, 
@@ -242,7 +344,7 @@ func (h *Handler) GetPostById(w http.ResponseWriter, r *http.Request) {
 		COALESCE(pv.num_of_upvotes, 0) as num_of_upvotes,
 		COALESCE(pv.num_of_downvotes, 0) as num_of_downvotes,
 		COALESCE(pvv.vote_type, 0) AS vote_status,
-		COALESCE(pc.num_of_comments, 0) AS num_comments,
+		COALESCE(pc.num_of_comments, 0) AS num_of_comments,
 		pb.post_bookmark_id as bookmark_id, 
 		CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked
 		FROM posts p
@@ -267,12 +369,103 @@ func (h *Handler) GetPostById(w http.ResponseWriter, r *http.Request) {
 		) pc ON pc.post_id = p.post_id
 		LEFT JOIN posts_bookmarks pb ON pb.post_id = p.post_id AND pb.user_id = $1
 		WHERE p.post_id = $2
-		GROUP BY p.post_id, u.username, u.user_id, i.image_name, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
+		GROUP BY p.post_id, u.username, u.display_name, u.user_id, i.image_name,t.topic_id, t.creator_id, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
     pv.num_of_downvotes, pc.num_of_comments
 		ORDER BY p.created_date DESC`,
 		userIDInt, postIDInt).
-		Scan(&post.Post_ID, &post.User_ID, &post.Username, &post.User_Image, &post.Topic_Name, &post.Category_Icon, &post.Tag_Name, &post.Tag_Icon, &post.Tag_Description,
+		Scan(&post.Post_ID, &post.Post_URL, &post.User_ID, &post.Username, &post.DisplayName, &post.User_Image, &post.Topic_ID, &post.Topic_User_ID, &post.Topic_Name, &post.Category_Icon, &post.Tag_Name, &post.Tag_Icon, &post.Tag_Description,
 			&post.Title, &post.Content, &created, &post.Vote_ID, &post.Upvote_Count, &post.Downvote_Count, &post.Vote_Status, &post.Comment_Count, &post.Bookmark_ID, &post.Is_Bookmarked)
+
+	post.Created_Date = created.Format(time.RFC3339)
+	if err != nil {
+		util.WriteError(w, http.StatusNotFound, err)
+		return
+	}
+
+	util.WriteJSON(w, http.StatusOK, post)
+}
+
+func (h *Handler) GetPostByURL(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	post := new(types.PostDefaultResult)
+	var created time.Time
+	//get user_id from params
+	userID := mux.Vars(r)["user_id"]
+	//convert userID to integer (check if valid integer)
+	userIDInt, err := strconv.Atoi(userID)
+	//check if id is an integer
+	if err != nil {
+		util.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	//get post_url from params
+	postURL := mux.Vars(r)["post_url"]
+	if postURL == "" {
+		util.WriteError(w, http.StatusBadRequest, errors.New("missing post url"))
+		return
+	}
+
+	//get data from db
+	err = h.db.QueryRow(ctx,
+		`SELECT 
+		p.post_id, 
+		p.post_url,
+		u.user_id,
+		u.username, 
+		u.display_name,
+		i.image_name, 
+		t.topic_id,
+		t.creator_id,
+		t.topic_name, 
+		c.icon_name as category_icon, 
+		tags.tag_name, 
+		tags.icon_name as tag_icon, 
+		tags.description as tag_description, 
+		p.title, 
+		p.content, 
+		p.created_date,
+		pvv.post_vote_id as vote_id,
+		COALESCE(pv.num_of_upvotes, 0) as num_of_upvotes,
+		COALESCE(pv.num_of_downvotes, 0) as num_of_downvotes,
+		COALESCE(pvv.vote_type, 0) AS vote_status,
+		COALESCE(pc.num_of_comments, 0) AS num_of_comments,
+		pb.post_bookmark_id as bookmark_id, 
+		CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked
+		FROM posts p
+		INNER JOIN topics t ON t.topic_id = p.topic_id
+		INNER JOIN users u ON u.user_id = p.author_id
+		INNER JOIN profile_image i ON u.image_id = i.image_id
+		INNER JOIN categories c ON t.category_id = c.category_id
+		LEFT JOIN tags ON tags.tag_id = p.tag_id
+		LEFT JOIN (
+		SELECT post_id, 
+		COUNT(post_vote_id) FILTER (WHERE vote_type = 1) as num_of_upvotes,
+		COUNT(post_vote_id) FILTER (WHERE vote_type = -1) as num_of_downvotes 
+		FROM posts_votes
+		GROUP BY post_id
+		) pv ON p.post_id = pv.post_id 
+		LEFT JOIN posts_votes pvv ON p.post_id = pvv.post_id AND pvv.user_id = $1
+		LEFT JOIN (
+		SELECT post_id,
+		COUNT(comment_id) as num_of_comments 
+		FROM posts_comments
+		GROUP BY post_id
+		) pc ON pc.post_id = p.post_id
+		LEFT JOIN posts_bookmarks pb ON pb.post_id = p.post_id AND pb.user_id = $1
+		WHERE p.post_url = $2
+		GROUP BY p.post_id, u.username, u.display_name, u.user_id, i.image_name, t.topic_id,  t.creator_id, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
+    pv.num_of_downvotes, pc.num_of_comments
+		ORDER BY p.created_date DESC`,
+		userIDInt, postURL).
+		Scan(&post.Post_ID, &post.Post_URL, &post.User_ID, &post.Username, &post.DisplayName, &post.User_Image, &post.Topic_ID, &post.Topic_User_ID, &post.Topic_Name, &post.Category_Icon, &post.Tag_Name, &post.Tag_Icon, &post.Tag_Description,
+			&post.Title, &post.Content, &created, &post.Vote_ID, &post.Upvote_Count, &post.Downvote_Count, &post.Vote_Status, &post.Comment_Count, &post.Bookmark_ID, &post.Is_Bookmarked)
+
+	post.Created_Date = created.Format(time.RFC3339)
+	if errors.Is(err, sql.ErrNoRows) {
+		util.WriteError(w, http.StatusBadRequest, errors.New("invalid post url"))
+		return
+	}
 
 	if err != nil {
 		util.WriteError(w, http.StatusNotFound, err)
@@ -290,6 +483,7 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 	query := r.URL.Query()
 	limit := query.Get("limit")
 	cursorParam := query.Get("cursor")
+	sortBy := query.Get("sortBy")
 
 	//only verified users can access the data
 	//check token and token header
@@ -321,9 +515,15 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 	limitAddOne := limitQuery + 1
 
 	//check cursor
-	var decodedCursor *types.SumVotesPostCursor
+	var decodedCursor any
 	if cursorParam != "" {
-		decodedCursor, err = cursor.DecodeSumVotesCursor(cursorParam)
+		switch sortBy {
+		case "alpha":
+			decodedCursor, err = cursor.DecodeAlphaCursor(cursorParam)
+		default:
+			decodedCursor, err = cursor.DecodeSumVotesDateCursor(cursorParam)
+		}
+
 		if err != nil {
 			util.WriteError(w, http.StatusBadRequest, err)
 			return
@@ -334,15 +534,19 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 		rows pgx.Rows
 	)
 	//get data from db //for main feed
-	//first select statement, treat num_followers as null so to make sure it comes first
+	//first select statement,
 	//first select statement - get posts from topics that are under same categories of the topics user follows
 	//second select statement - most popular posts
 	baseSQLStatement := `SELECT * FROM (
     		SELECT DISTINCT
 				p.post_id,
+				p.post_url,
 				u.user_id,
 				u.username, 
+				u.display_name,
 				i.image_name, 
+				t.topic_id,
+				t.creator_id,
 				t.topic_name, 
 				c.icon_name as category_icon, 
 				tags.tag_name, 
@@ -354,11 +558,12 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 				pvv.post_vote_id as vote_id,
 				COALESCE(pv.num_of_upvotes, 0) as num_of_upvotes,
 				COALESCE(pv.num_of_downvotes, 0) as num_of_downvotes,
-				0::INT AS sum_of_votes,
+				COALESCE(pv.sum_of_votes, 0) AS sum_of_votes,
 				COALESCE(pvv.vote_type, 0) AS vote_status,
-				COALESCE(pc.num_of_comments, 0) AS num_comments,
+				COALESCE(pc.num_of_comments, 0) AS num_of_comments,
 				pb.post_bookmark_id as bookmark_id,
-				CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked
+				CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked,
+				true as is_following
 				FROM posts p
 				INNER JOIN users u ON u.user_id = p.author_id
 				INNER JOIN profile_image i ON u.image_id = i.image_id
@@ -369,7 +574,8 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 				LEFT JOIN (
 					SELECT post_id, 
 					COUNT(post_vote_id) FILTER (WHERE vote_type = 1) as num_of_upvotes,
-					COUNT(post_vote_id) FILTER (WHERE vote_type = -1) as num_of_downvotes 
+					COUNT(post_vote_id) FILTER (WHERE vote_type = -1) as num_of_downvotes,
+					SUM(vote_type) as sum_of_votes 
 					FROM posts_votes
 					GROUP BY post_id
     		) pv ON p.post_id = pv.post_id 
@@ -382,13 +588,17 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 				) pc ON pc.post_id = p.post_id
 				LEFT JOIN posts_bookmarks pb ON pb.post_id = p.post_id AND pb.user_id = $1
 				WHERE tf.user_id = $1
-				GROUP BY p.post_id, u.user_id, u.username, i.image_name, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes, pv.num_of_downvotes, pc.num_of_comments
-    		UNION
+				GROUP BY p.post_id, u.user_id, u.username, u.display_name, i.image_name, t.topic_id,  t.creator_id, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes, pv.num_of_downvotes, pv.sum_of_votes, pc.num_of_comments
+    		UNION ALL
 			SELECT
 				p.post_id,
+				p.post_url,
 				u.user_id,
 				u.username, 
+				u.display_name,
 				i.image_name, 
+				t.topic_id,
+				t.creator_id,
 				t.topic_name, 
 				c.icon_name as category_icon, 
 				tags.tag_name, 
@@ -402,9 +612,10 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 				COALESCE(pv.num_of_downvotes, 0) as num_of_downvotes,
 				COALESCE(pv.sum_of_votes, 0) AS sum_of_votes,
 				COALESCE(pvv.vote_type, 0) AS vote_status,
-				COALESCE(pc.num_of_comments, 0) AS num_comments,
+				COALESCE(pc.num_of_comments, 0) AS num_of_comments,
 				pb.post_bookmark_id as bookmark_id,
-				CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked
+				CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked,
+				false as is_following
 				FROM posts p
 				INNER JOIN users u ON u.user_id = p.author_id
 				INNER JOIN profile_image i ON u.image_id = i.image_id
@@ -427,29 +638,112 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 				) pc ON pc.post_id = p.post_id
 				LEFT JOIN tags ON tags.tag_id = p.tag_id
 				LEFT JOIN posts_bookmarks pb ON pb.post_id = p.post_id AND pb.user_id = $1
-				WHERE t.visibility = 'public'
-				GROUP BY p.post_id, u.user_id, u.username, t.topic_name, i.image_name, c.icon_name,tags.tag_name, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, tag_icon, tag_description, pv.num_of_upvotes, pv.num_of_downvotes, pc.num_of_comments, pv.sum_of_votes
+				WHERE t.visibility = 'public' AND p.post_id NOT IN (
+					SELECT p2.post_id
+					FROM posts p2
+					JOIN topics_followers tf2 ON tf2.topic_id = p2.topic_id
+					WHERE tf2.user_id = $1
+				)
+				GROUP BY p.post_id, u.user_id, u.username, u.display_name,t.topic_id, t.creator_id, t.topic_name, i.image_name, c.icon_name,tags.tag_name, p.title, p.content, p.created_date, pb.post_id, vote_type, vote_id, bookmark_id, tag_icon, tag_description, num_of_upvotes, num_of_downvotes, num_of_comments, sum_of_votes
 		) main_feed_post
 		`
 
 	if cursorParam == "" {
+		var orderStatement string
+		switch sortBy {
+		case "new":
+			orderStatement = ` ORDER BY is_following DESC, created_date DESC, sum_of_votes DESC, num_of_comments DESC, post_id DESC `
+		case "alpha":
+			orderStatement = ` ORDER BY title ASC, created_date DESC `
+		default:
+			orderStatement = ` ORDER BY is_following DESC, sum_of_votes DESC, num_of_comments DESC, created_date DESC, post_id DESC `
+
+		}
 		//if ?cursor= gives empty string
-		SQLStatement := baseSQLStatement + `ORDER BY created_date DESC, sum_of_votes DESC
-		LIMIT $2`
+		SQLStatement := baseSQLStatement + orderStatement + ` LIMIT $2`
 		rows, err = h.db.Query(ctx, SQLStatement, userID, limitAddOne)
 	} else {
-		SQLStatement := baseSQLStatement + `
-		WHERE (
-			created_date < $2
-			OR (created_date = $2 AND sum_of_votes < $3)
-			OR (created_date = $2 AND sum_of_votes = $3)
-		)
-		ORDER BY created_date DESC, sum_of_votes DESC
-		LIMIT $4`
-		rows, err = h.db.Query(ctx, SQLStatement, userID,
-			decodedCursor.Created_Date,
-			decodedCursor.Sum_Votes_Count,
-			limitAddOne)
+		switch d := decodedCursor.(type) {
+		case *types.SumVotesDateCursor:
+			d = decodedCursor.(*types.SumVotesDateCursor)
+			switch sortBy {
+			case "new":
+				SQLStatement := baseSQLStatement + `
+				WHERE (
+					is_following < $2 OR 
+					(
+						is_following = $2 AND 
+						( 
+						created_date < $3
+						OR (created_date = $3 AND sum_of_votes < $4)
+						OR (created_date = $3 AND sum_of_votes = $4 AND num_of_comments < $5)
+						OR (created_date = $3 AND sum_of_votes = $4 AND num_of_comments = $5 AND post_id < $6)
+						)
+					)
+				)	
+				ORDER BY is_following DESC, created_date DESC, sum_of_votes DESC, num_of_comments DESC, post_id DESC
+				LIMIT $7
+				`
+				rows, err = h.db.Query(
+					ctx,
+					SQLStatement,
+					userID,
+					d.Is_Following,
+					d.Created_Date,
+					d.Sum_Votes_Count,
+					d.Comment_Count,
+					d.Post_ID,
+					limitAddOne,
+				)
+
+			default:
+				SQLStatement := baseSQLStatement + `
+				WHERE (
+					is_following < $2 OR 
+					(
+						is_following = $2 AND 
+						( 
+						sum_of_votes < $3
+						OR (sum_of_votes = $3 AND num_of_comments < $4)
+						OR (sum_of_votes = $3 AND num_of_comments = $4 AND created_date < $5)
+						OR (sum_of_votes = $3 AND num_of_comments = $4 AND created_date = $5 AND post_id < $6)
+						)
+					)
+				)
+				ORDER BY is_following DESC, sum_of_votes DESC, num_of_comments DESC, created_date DESC, post_id DESC
+				LIMIT $7
+				`
+				rows, err = h.db.Query(
+					ctx,
+					SQLStatement,
+					userID,
+					d.Is_Following,
+					d.Sum_Votes_Count,
+					d.Comment_Count,
+					d.Created_Date,
+					d.Post_ID,
+					limitAddOne,
+				)
+			}
+		case *types.AlphaDateCursor:
+			d = decodedCursor.(*types.AlphaDateCursor)
+			SQLStatement := baseSQLStatement + `
+			WHERE ( title > $2 
+			OR (title = $2 AND created_date < $3)
+			)
+			ORDER BY title ASC, created_date DESC
+			LIMIT $4
+	`
+			rows, err = h.db.Query(
+				ctx,
+				SQLStatement,
+				userID,
+				d.Title,
+				d.Created_Date,
+				limitAddOne,
+			)
+		}
+
 	}
 
 	//database error 500 status code
@@ -459,13 +753,14 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	postsArr := make([]types.PostByFollowPopularityResult, 0)
+	postsArr := make([]types.PostSumVotesIsFollowingResult, 0)
 	for rows.Next() {
-		var post types.PostByFollowPopularityResult
+		var post types.PostSumVotesIsFollowingResult
 		var created time.Time
 
-		if err := rows.Scan(&post.Post_ID, &post.User_ID, &post.Username, &post.User_Image, &post.Topic_Name, &post.Category_Icon, &post.Tag_Name, &post.Tag_Icon, &post.Tag_Description,
-			&post.Title, &post.Content, &created, &post.Vote_ID, &post.Upvote_Count, &post.Downvote_Count, &post.Sum_Votes, &post.Vote_Status, &post.Comment_Count, &post.Bookmark_ID, &post.Is_Bookmarked); err != nil {
+		if err := rows.Scan(&post.Post_ID, &post.Post_URL, &post.User_ID, &post.Username, &post.DisplayName, &post.User_Image,
+			&post.Topic_ID, &post.Topic_User_ID, &post.Topic_Name, &post.Category_Icon, &post.Tag_Name, &post.Tag_Icon, &post.Tag_Description,
+			&post.Title, &post.Content, &created, &post.Vote_ID, &post.Upvote_Count, &post.Downvote_Count, &post.Sum_Votes, &post.Vote_Status, &post.Comment_Count, &post.Bookmark_ID, &post.Is_Bookmarked, &post.Is_Following); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -477,12 +772,26 @@ func (h *Handler) FilterByFollowAndPopularity(w http.ResponseWriter, r *http.Req
 	var nextCursor *string
 	if len(postsArr) > limitQuery {
 		last := postsArr[limitQuery-1]
-		c, err := cursor.EncodeSumVotesCursor(types.SumVotesPostCursor{
-			Created_Date:    last.Created_Date,
-			Sum_Votes_Count: last.Sum_Votes,
-		})
-		if err == nil {
-			nextCursor = &c
+		switch sortBy {
+		case "alpha":
+			c, err := cursor.EncodeAlphaCursor(types.AlphaDateCursor{
+				Created_Date: last.Created_Date,
+				Title:        last.Title,
+			})
+			if err == nil {
+				nextCursor = &c
+			}
+		default:
+			c, err := cursor.EncodeSumVotesDateCursor(types.SumVotesDateCursor{
+				Created_Date:    last.Created_Date,
+				Sum_Votes_Count: last.Sum_Votes,
+				Comment_Count:   last.Comment_Count,
+				Is_Following:    &last.Is_Following,
+				Post_ID:         &last.Post_ID,
+			})
+			if err == nil {
+				nextCursor = &c
+			}
 		}
 		postsArr = postsArr[:limitQuery]
 	} else {
@@ -501,6 +810,7 @@ func (h *Handler) FilterByFollow(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	limit := query.Get("limit")
 	cursorParam := query.Get("cursor")
+	sortBy := query.Get("sortBy")
 
 	//only verified users can access the data
 	//check token and token header
@@ -521,15 +831,6 @@ func (h *Handler) FilterByFollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload types.PostByFollowPayload
-	err = json.NewDecoder(r.Body).Decode(&payload)
-
-	//check username
-	if err != nil {
-		util.WriteError(w, http.StatusBadRequest, err)
-		return
-	}
-
 	//convert limitQuery to integer (check if valid integer)
 	limitQuery, err := strconv.Atoi(limit)
 	//check if limit is an integer
@@ -541,9 +842,15 @@ func (h *Handler) FilterByFollow(w http.ResponseWriter, r *http.Request) {
 	limitAddOne := limitQuery + 1
 
 	//check cursor
-	var decodedCursor *types.DatePostCursor
+	var decodedCursor any
 	if cursorParam != "" {
-		decodedCursor, err = cursor.DecodeDateCursor(cursorParam)
+		switch sortBy {
+		case "alpha":
+			decodedCursor, err = cursor.DecodeAlphaCursor(cursorParam)
+		default:
+			decodedCursor, err = cursor.DecodeSumVotesDateCursor(cursorParam)
+		}
+
 		if err != nil {
 			util.WriteError(w, http.StatusBadRequest, err)
 			return
@@ -554,15 +861,16 @@ func (h *Handler) FilterByFollow(w http.ResponseWriter, r *http.Request) {
 		rows pgx.Rows
 	)
 
-	//get data from db //for main feed
-	//first select statement, treat num_followers as null so to make sure it comes first
-	//first select statement - get posts from topics that are under same categories of the topics user follows
-	//second select statement - most popular posts
+	//get posts from topics followed by user
 	baseSQLStatement := `SELECT DISTINCT
 		p.post_id,
+		p.post_url,
 		u.user_id,
 		u.username, 
+		u.display_name,
 		i.image_name, 
+		t.topic_id,
+		t.creator_id,
 		t.topic_name, 
 		c.icon_name as category_icon, 
 		tags.tag_name, 
@@ -572,51 +880,120 @@ func (h *Handler) FilterByFollow(w http.ResponseWriter, r *http.Request) {
 		p.content,
 		p.created_date,
 		pvv.post_vote_id as vote_id, 
-		COALESCE(SUM(CASE WHEN pv.vote_type = 1 THEN 1 ELSE 0 END), 0) AS num_of_upvotes,
-		COALESCE(SUM(CASE WHEN pv.vote_type = 0 THEN 1 ELSE 0 END), 0) AS num_of_downvotes,
-		COALESCE(COUNT(DISTINCT pv.post_vote_id), 0) AS num_of_votes,
+		COALESCE(pv.num_of_upvotes, 0) as num_of_upvotes,
+		COALESCE(pv.num_of_downvotes, 0) as num_of_downvotes,
+		COALESCE(pv.sum_of_votes, 0) AS sum_of_votes,
 		COALESCE(pvv.vote_type, 0) AS vote_status,
-		COALESCE(COUNT(DISTINCT pc.comment_id), 0) AS num_comments,
+		COALESCE(pc.num_of_comments, 0) AS num_of_comments,
 		pb.post_bookmark_id as bookmark_id, 
-		CASE 
-			WHEN pb.post_id IS NULL 
-			THEN FALSE ELSE TRUE 
-    	END AS is_bookmarked
+		CASE WHEN pb.post_id IS NULL THEN FALSE ELSE TRUE END AS is_bookmarked
 		FROM posts p
 		LEFT JOIN tags ON tags.tag_id = p.tag_id
 		INNER JOIN users u ON u.user_id = p.author_id
 		INNER JOIN profile_image i ON i.image_id = u.image_id
 		INNER JOIN topics t ON t.topic_id = p.topic_id
 		INNER JOIN categories c ON t.category_id = c.category_id
-		LEFT JOIN posts_votes pv ON p.post_id = pv.post_id 
-		LEFT JOIN posts_votes pvv ON pvv.post_id = p.post_id AND pvv.user_id = $1
-		LEFT JOIN posts_comments pc ON pc.post_id = p.post_id
+		LEFT JOIN ( 
+			SELECT post_id,  
+			COUNT(post_vote_id) FILTER (WHERE vote_type = 1) as num_of_upvotes,
+			COUNT(post_vote_id) FILTER (WHERE vote_type = -1) as num_of_downvotes,
+			SUM(vote_type) as sum_of_votes 
+      		FROM posts_votes
+			GROUP BY post_id
+		) pv ON p.post_id = pv.post_id 
+		LEFT JOIN posts_votes pvv ON p.post_id = pvv.post_id AND pvv.user_id = $1
+		LEFT JOIN (
+			SELECT post_id,
+			COUNT(comment_id) as num_of_comments 
+			FROM posts_comments
+			GROUP BY post_id
+    	) pc ON pc.post_id = p.post_id
 		LEFT JOIN posts_bookmarks pb ON pb.post_id = p.post_id AND pb.user_id = $1
 		INNER JOIN topics_followers tf ON tf.topic_id = t.topic_id
 		WHERE tf.user_id = $1
 		`
 	//if no cursor param. first batch
 	if cursorParam == "" {
-		SQLStatement := baseSQLStatement + `
-		ORDER BY p.created_date DESC 
-		LIMIT $2`
+		var orderStatement string
+		switch sortBy {
+		case "new":
+			orderStatement = ` ORDER BY p.created_date, COALESCE(pv.sum_of_votes, 0) DESC, COALESCE(pc.num_of_comments, 0) DESC, p.post_id DESC  `
+		case "alpha":
+			orderStatement = ` ORDER BY p.title ASC, p.created_date DESC `
+		default:
+			orderStatement = ` ORDER BY COALESCE(pv.sum_of_votes, 0) DESC,  COALESCE(pc.num_of_comments, 0) DESC, p.created_date DESC, p.post_id DESC `
+		}
+
+		SQLStatement := baseSQLStatement + orderStatement + ` LIMIT $2`
 		rows, err = h.db.Query(ctx, SQLStatement, userID, limitAddOne)
 	} else {
-		SQLStatement := baseSQLStatement + `
-		AND (
-			p.created_date < $2
-			OR p.created_date = $2
-		)
-		ORDER BY p.created_date DESC 
-		LIMIT $3`
+		switch d := decodedCursor.(type) {
+		case *types.SumVotesDateCursor:
+			d = decodedCursor.(*types.SumVotesDateCursor)
+			switch sortBy {
+			case "new":
+				SQLStatement := baseSQLStatement + `
+				AND (
+					p.created_date < $2
+					OR (p.created_date = $2 AND COALESCE(pv.sum_of_votes,0) < $3)
+					OR (p.created_date = $2 AND COALESCE(pv.sum_of_votes,0) = $3,  COALESCE(pc.num_of_comments, 0) < $4 )
+					OR (p.created_date = $2 AND COALESCE(pv.sum_of_votes,0) = $3,  COALESCE(pc.num_of_comments, 0) = $4, p.post_id < $5)
+				)
+				ORDER BY p.created_date, COALESCE(pv.sum_of_votes, 0) DESC, COALESCE(pc.num_of_comments, 0) DESC, p.post_id DESC LIMIT $6`
 
-		rows, err = h.db.Query(
-			ctx,
-			SQLStatement,
-			userID,
-			decodedCursor.Created_Date,
-			limitAddOne,
-		)
+				rows, err = h.db.Query(
+					ctx,
+					SQLStatement,
+					userID,
+					d.Created_Date,
+					d.Sum_Votes_Count,
+					d.Comment_Count,
+					d.Post_ID,
+					limitAddOne,
+				)
+
+			default:
+				SQLStatement := baseSQLStatement + `
+				AND (
+					COALESCE(pv.sum_of_votes,0) < $2
+					OR (COALESCE(pv.sum_of_votes,0) = $2 AND COALESCE(pc.num_of_comments, 0) < $3)
+					OR (COALESCE(pv.sum_of_votes,0) = $2 AND COALESCE(pc.num_of_comments, 0) = $3 AND p.created_date < $4)
+					OR (COALESCE(pv.sum_of_votes,0) = $2 AND COALESCE(pc.num_of_comments, 0) = $3 AND p.created_date < $4 AND p.post_id = $5)
+				)
+				ORDER BY COALESCE(pv.sum_of_votes,0) DESC, p.created_date DESC, p.post_id DESC
+				LIMIT $6
+			`
+				rows, err = h.db.Query(
+					ctx,
+					SQLStatement,
+					userID,
+					d.Sum_Votes_Count,
+					d.Comment_Count,
+					d.Created_Date,
+					d.Post_ID,
+					limitAddOne,
+				)
+			}
+		case *types.AlphaDateCursor:
+			d = decodedCursor.(*types.AlphaDateCursor)
+			SQLStatement := baseSQLStatement + `
+			AND (
+				p.title > $2
+				OR (p.title = $2 AND p.created_date < $3)
+			)
+			GROUP BY p.post_id, p.post_url, u.user_id, u.username, u.display_name, i.image_name, t.topic_id, t.creator_id, t.topic_name, c.icon_name, tags.tag_name, tag_icon, tag_description, p.title, p.content, p.created_date, pb.post_id, pvv.vote_type, vote_id, bookmark_id, pv.num_of_upvotes,
+			pv.num_of_downvotes, pc.num_of_comments, pv.sum_of_votes
+			ORDER BY p.title ASC, p.created_date DESC
+			LIMIT $4`
+			rows, err = h.db.Query(
+				ctx,
+				SQLStatement,
+				userID,
+				d.Created_Date,
+				d.Title,
+				limitAddOne,
+			)
+		}
 	}
 
 	//database error 500 status code
@@ -626,13 +1003,14 @@ func (h *Handler) FilterByFollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postsArr := make([]types.PostDefaultResult, 0)
+	postsArr := make([]types.PostSumVotesResult, 0)
 	for rows.Next() {
-		var post types.PostDefaultResult
+		var post types.PostSumVotesResult
 		var created time.Time
 
-		if err := rows.Scan(&post.Post_ID, &post.User_ID, &post.Username, &post.User_Image, &post.Topic_Name, &post.Category_Icon, &post.Tag_Name, &post.Tag_Icon, &post.Tag_Description,
-			&post.Title, &post.Content, &created, &post.Vote_ID, &post.Upvote_Count, &post.Downvote_Count, &post.Vote_Status, &post.Comment_Count, &post.Bookmark_ID, &post.Is_Bookmarked); err != nil {
+		if err := rows.Scan(&post.Post_ID, &post.Post_URL, &post.User_ID, &post.Username, &post.DisplayName, &post.User_Image,
+			&post.Topic_ID, &post.Topic_User_ID, &post.Topic_Name, &post.Category_Icon, &post.Tag_Name, &post.Tag_Icon, &post.Tag_Description,
+			&post.Title, &post.Content, &created, &post.Vote_ID, &post.Upvote_Count, &post.Downvote_Count, &post.Sum_Votes, &post.Vote_Status, &post.Comment_Count, &post.Bookmark_ID, &post.Is_Bookmarked); err != nil {
 			util.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -644,11 +1022,25 @@ func (h *Handler) FilterByFollow(w http.ResponseWriter, r *http.Request) {
 	var nextCursor *string
 	if len(postsArr) > limitQuery {
 		last := postsArr[limitQuery-1]
-		c, err := cursor.EncodeDateCursor(types.DatePostCursor{
-			Created_Date: last.Created_Date,
-		})
-		if err == nil {
-			nextCursor = &c
+		switch sortBy {
+		case "alpha":
+			c, err := cursor.EncodeAlphaCursor(types.AlphaDateCursor{
+				Created_Date: last.Created_Date,
+				Title:        last.Title,
+			})
+			if err == nil {
+				nextCursor = &c
+			}
+		default:
+			c, err := cursor.EncodeSumVotesDateCursor(types.SumVotesDateCursor{
+				Sum_Votes_Count: last.Sum_Votes,
+				Created_Date:    last.Created_Date,
+				Post_ID:         &last.Post_ID,
+				Comment_Count:   last.Comment_Count,
+			})
+			if err == nil {
+				nextCursor = &c
+			}
 		}
 		postsArr = postsArr[:limitQuery]
 	} else {
@@ -659,4 +1051,92 @@ func (h *Handler) FilterByFollow(w http.ResponseWriter, r *http.Request) {
 		"result": postsArr,
 		"cursor": nextCursor,
 	})
+}
+
+// Update/edit posts information
+func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	//only verified users can access the data
+	//check token and token header
+	authToken := r.Header.Get("Authorization")
+	//check if authHeader is empty
+	if authToken == "" {
+		util.WriteError(w, http.StatusUnauthorized, errors.New("Missing authorization header"))
+		return
+	}
+
+	//get post_id from params
+	postID := mux.Vars(r)["post_id"]
+	//convert postID to integer (check if valid integer)
+	postIDInt, err := strconv.Atoi(postID)
+	//check if id is an integer
+	if err != nil {
+		util.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	var payload types.PostUpdatePayload
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		util.WriteError(w, http.StatusBadRequest, errors.New("invalid inputs"))
+		return
+	}
+
+	if payload.Title == "" || payload.Content == "" {
+		util.WriteError(w, http.StatusBadRequest, errors.New("invalid inputs"))
+		return
+	}
+
+	var result types.PostUpdatePayload
+	err = h.db.QueryRow(ctx,
+		`UPDATE posts SET tag_id = $1, title = $2, content = $3
+		WHERE post_id = $4 RETURNING tag_id, title, content`,
+		payload.Tag_ID, payload.Title, payload.Content, postIDInt,
+	).Scan(&result.Tag_ID, &result.Title, &result.Content)
+
+	//server error
+	if err != nil {
+		util.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	util.WriteJSON(w, http.StatusOK, result)
+
+}
+
+// delete posts information
+func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	//get post_id from params
+	postID := mux.Vars(r)["post_id"]
+	//convert postID to integer (check if valid integer)
+	postIDInt, err := strconv.Atoi(postID)
+	//check if id is an integer
+	if err != nil {
+		util.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	//delete post from db
+	response, err := h.db.Exec(ctx,
+		`DELETE FROM posts WHERE post_id=$1`,
+		postIDInt,
+	)
+
+	//server error
+	if err != nil {
+		util.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if response.RowsAffected() == 0 {
+		util.WriteError(w, http.StatusNotFound, errors.New("post not deleted"))
+		return
+	}
+
+	util.WriteJSON(w, http.StatusOK, map[string]int{
+		"post_id": postIDInt,
+	})
+
 }

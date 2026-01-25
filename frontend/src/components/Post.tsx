@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function Post({
   post_id,
+  post_url,
   user_id,
   username,
   user_image,
@@ -42,7 +43,7 @@ export default function Post({
   const contentWarningBtn = useRef<HTMLButtonElement | null>(null);
   const [bookmarkID, setBookmarkID] = useState(bookmark_id);
   const [isBookmark, setIsBookmark] = useState(is_bookmarked);
-  const [voteID, setVoteID] = useState(vote_id);
+  const [voteID, setVoteID] = useState<number|null>(vote_id);
   const [voteStatus, setVoteStatus] = useState(vote_status);
   const [upvoteCount, setUpvoteCount] = useState(upvote_count);
   const [downvoteCount, setDownvoteCount] = useState(downvote_count);
@@ -80,19 +81,21 @@ export default function Post({
 
   async function addVote(votenum: -1 | 1) {
     try {
+      const token = localStorage.getItem("token");
       setVoteLoading(true);
       const payload = {
         user_id: user.user_id,
         post_id: post_id,
         vote_type: votenum,
+        token: token,
       };
-      const postVoteID = await addPostVote(payload);
+      const newCount = await addPostVote(payload);
       if (votenum == -1) {
-        setDownvoteCount(downvote_count + 1);
+        setDownvoteCount(newCount.downvote_count);
       } else {
-        setUpvoteCount(upvote_count + 1);
+        setUpvoteCount(newCount.upvote_count);
       }
-      setVoteID(postVoteID);
+      setVoteID(newCount.post_vote_id??null);
       setVoteStatus(votenum);
     } catch (error) {
       console.error(error);
@@ -106,7 +109,12 @@ export default function Post({
   async function changeVote(voteNum: -1 | 1) {
     try {
       setVoteLoading(true);
-      const payload = { post_vote_id: voteID, vote_type: voteNum };
+      const token = localStorage.getItem("token");
+      const payload = {
+        post_vote_id: voteID,
+        vote_type: voteNum,
+        token: token,
+      };
       const newCount = await updatePostVote(payload);
       setDownvoteCount(newCount.downvote_count);
       setUpvoteCount(newCount.upvote_count);
@@ -144,7 +152,12 @@ export default function Post({
     } else if (!bookmarkID) {
       try {
         setBookmarkLoading(true);
-        const payload = { user_id: user.user_id, post_id: post_id };
+        const token = localStorage.getItem("token");
+        const payload = {
+          user_id: user.user_id,
+          post_id: post_id,
+          token: token,
+        };
         const newBookmarkID = await addPostBookmark(payload);
         setBookmarkID(newBookmarkID);
         setIsBookmark(true);
@@ -168,7 +181,7 @@ export default function Post({
     if (selection && selection.toString().length > 0) {
       return;
     }
-    navigate(`/buzz/${post_id}`);
+    navigate(`/buzz/${post_url}`);
   }
 
   return (
@@ -199,7 +212,13 @@ export default function Post({
                 <img src={require(`../images/${user_image}`)} />
               </div>
               {user?.user_id == user_id ? (
-                <p className="m-0" style={{ color: "rgb(255, 191, 54)",  filter: "drop-shadow(0px 0px 0px rgba(31, 18, 6, 0))" }}>
+                <p
+                  className="m-0"
+                  style={{
+                    color: "rgb(255, 191, 54)",
+                    filter: "drop-shadow(0px 0px 0px rgba(31, 18, 6, 0))",
+                  }}
+                >
                   Me
                 </p>
               ) : (

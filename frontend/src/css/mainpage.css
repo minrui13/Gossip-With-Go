@@ -1,0 +1,68 @@
+.main-page-container {
+  overflow: hidden;
+}
+
+.main-page-main-div {
+  overflow-y: scroll;
+  height: 100vh;
+}
+.main-page-post-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  padding: 25px 20px;
+}
+
+.main-page-scroll-to-top-btn.show {
+  opacity: 1;
+  background-color: var(--honey-yellow);
+}
+.main-page-scroll-to-top-btn:not(.show) {
+  opacity: 0;
+  background-color: rgba(0, 0, 0, 0);
+}
+
+.main-page-scroll-to-top-btn{
+  transition: opacity 0.2s cubic-bezier(0.18, 0.65, 0.57, 0.88),
+  background-color 0.2s cubic-bezier(0.18, 0.65, 0.57, 0.88);
+}
+
+.main-page-scroll-to-top,
+.main-page-scroll-to-top:active,
+.main-page-scroll-to-top:focus,
+.main-page-scroll-to-top:hover {
+  background-color: var(--honey-yellow);
+  width: 60px;
+  aspect-ratio: 1/1;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  border: 1.5px solid var(--caramel-brown) !important;
+  transform: translate(-30px, -30px);
+  z-index: 99999;
+  filter: drop-shadow(0px 0px 5px rgba(91, 91, 91, 0.2));
+}
+
+.main-page-scroll-to-top-btn.show .main-page-scroll-to-top-img {
+  opacity: 1;
+}
+
+.main-page-scroll-to-top-btn .main-page-scroll-to-top-img {
+  opacity: 0;
+}
+
+.main-page-scroll-to-top-img {
+  width: 80%;
+  margin: auto;
+  transition: opacity 0.5s cubic-bezier(0.18, 0.65, 0.57, 0.88);
+}
+
+.main-page-load-more-btn {
+  border-radius: 17px;
+  border-width: 1.8px;
+}
