@@ -8,9 +8,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minrui13/backend/auth"
 	cors "github.com/minrui13/backend/middleware"
+	commentsVotesRoute "github.com/minrui13/backend/router/comment_votes"
+	commentsRouter "github.com/minrui13/backend/router/comments"
 	imagesRoute "github.com/minrui13/backend/router/images"
-	postsRouter "github.com/minrui13/backend/router/posts"
-	topicsRouter "github.com/minrui13/backend/router/topics"
+	postBookmarkRoute "github.com/minrui13/backend/router/post_bookmarks"
+	postVotesRoute "github.com/minrui13/backend/router/post_votes"
+	postsRoute "github.com/minrui13/backend/router/posts"
+	tagsRoute "github.com/minrui13/backend/router/tags"
+	topicsRoute "github.com/minrui13/backend/router/topics"
 	usersRoute "github.com/minrui13/backend/router/users"
 )
 
@@ -38,8 +43,13 @@ func (s *APIServer) Run() error {
 	subrouter.HandleFunc("/verifyToken", auth.VerifyToken).Methods("POST")
 	usersRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/users").Subrouter())
 	imagesRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/images").Subrouter())
-	topicsRouter.NewHandler(s.db).Router(subrouter.PathPrefix("/topics").Subrouter())
-	postsRouter.NewHandler(s.db).Router(subrouter.PathPrefix("/posts").Subrouter())
+	topicsRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/topics").Subrouter())
+	postsRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/posts").Subrouter())
+	postVotesRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/postVotes").Subrouter())
+	postBookmarkRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/postBookmarks").Subrouter())
+	commentsRouter.NewHandler(s.db).Router(subrouter.PathPrefix("/comments").Subrouter())
+	commentsVotesRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/commentVotes").Subrouter())
+	tagsRoute.NewHandler(s.db).Router(subrouter.PathPrefix("/tags").Subrouter())
 
 	log.Println("Listening on", s.addr)
 

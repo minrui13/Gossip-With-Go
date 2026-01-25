@@ -11,6 +11,8 @@ import { ToastContainer } from "react-toastify";
 import SignUp from "./pages/SignUp";
 import { StrictMode } from "react";
 import Error from "./pages/Error";
+import PostPage from "./pages/PostPage";
+import CreatePost from "./pages/CreatePost";
 
 export default function App() {
   return (
@@ -29,13 +31,18 @@ export default function App() {
             <Route element={<PageLayout />}>
               <Route path="/" element={<MainPage />} />
               <Route path="/hive">
-                <Route path=":hive_name" element={<MainPage />} />
+                <Route path=":hive_id" element={<MainPage />} />
               </Route>
+              <Route path="/buzz">
+                <Route path=":buzz_url" element={<PostPage />} />
+              </Route>
+              <Route path="/createBuzz" element={<RequireAuth component={<CreatePost />} />} />
               <Route
                 path="/profile/:username"
-                element={<RequireAuth component={<Profile/>} />}
+                element={<RequireAuth component={<Profile />} />}
               />
             </Route>
+
             <Route path="/404" element={<Error errorCode="404" />} />
             <Route path="/401" element={<Error errorCode="401" />} />
             <Route path="*" element={<Navigate to="/404" />} />
