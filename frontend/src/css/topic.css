@@ -1,0 +1,58 @@
+.topic-item-main-div {
+  width: 85%;
+  border: 2px solid var(--hazelnut-brown);
+  padding: 20px 30px;
+  background-color: #a36947;
+  border-radius: 20px;
+  transform: scale(1);
+  transition: transform 0.3s cubic-bezier(0, -0.03, 0.2, 0.99);
+  transition: background-color 0.3s cubic-bezier(0, -0.03, 0.2, 0.99);
+  /* filter: drop-shadow(0px 0px 10px rgba(145, 145, 145, 0.272)); */
+  cursor: pointer;
+}
+
+.topic-item-top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.topic-item-heading {
+  color: var(--milk-white);
+  font-family: "Antapani";
+}
+
+.topic-item-created-date {
+  color: #452b00d2;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.topic-item-description {
+  color: #fccc49;
+  font-weight: 500;
+}
+
+.topic-item-followers-posts-div {
+  display: flex;
+  gap: 10px;
+}
+
+.topic-item-followers-posts {
+  margin-bottom: 0px;
+}
+.topic-item-followers-posts-numbers {
+  color: #fff0ce;
+  font-weight: 500;
+}
+
+.topic-item-followers-posts-labels {
+  color: #fff1d1bd;
+  font-weight: 500;
+}
+
+.topic-item-created-by{
+    display: flex;
+font-weight: 500;
+}
