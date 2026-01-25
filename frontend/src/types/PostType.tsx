@@ -1,3 +1,4 @@
+import { TagDefaultType } from "./TagType";
 import { SearchLimitOffset } from "./UtilsType";
 
 export type PostDefaultResultType = {
@@ -5,7 +6,10 @@ export type PostDefaultResultType = {
   post_url: string;
   user_id: number;
   username: string;
+  display_name: string;
   user_image: string;
+  topic_id: number;
+  topic_user_id: number;
   topic_name: string;
   category_icon: string;
   tag_name: string | null;
@@ -73,5 +77,25 @@ export type PostIDUserIDToken = PostIDUserID & {
 
 export type PostURLUserID = {
   user_id: number;
-  post_url: string | undefined;
+  post_url: string | null;
+};
+
+export type PostUpdate = {
+  tag_id: number | null;
+  title: string;
+  content: string;
+};
+
+export type PostUpdatePayload = PostUpdate & {
+  tag_id: number | null;
+  title: string;
+  content: string;
+  post_id: number;
+  token: string | null;
+};
+
+export type PostComponent = PostDefaultResultType & {
+  onNotLogin: () => void;
+  tagsArr: TagDefaultType[];
+  removePost: (postid: number) => void;
 };
