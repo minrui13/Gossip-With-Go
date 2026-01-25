@@ -137,7 +137,7 @@ export default function SignUp() {
       }, 1000);
       //navigate to login page
       setTimeout(() => {
-        navigate("/login");
+        navigate("/buzzbee/login");
       }, 5000);
     } catch (error) {
       //handle errors
@@ -782,7 +782,7 @@ export default function SignUp() {
                 Submit
               </button>
               <p className="signup-login-note">
-                Have an account? <a href="/login">Login here</a>
+                Have an account? <a href="/buzzbee/login">Login here</a>
               </p>
             </div>
           </div>

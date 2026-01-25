@@ -265,7 +265,7 @@ export default function Login() {
               Submit
             </button>
             <p className="signup-login-note">
-              Don't have an account? <a href="/signup">Sign up here</a>
+              Don't have an account? <a href="/buzzbee/signup">Sign up here</a>
             </p>
           </div>
         </div>

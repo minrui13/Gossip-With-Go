@@ -66,7 +66,7 @@ export default function CreatePost() {
       const result = await getTopicByURL(payload);
       setTopicInfo(result);
     } catch (error) {
-      navigate("/404");
+      navigate("/buzzbee/404");
     }
   }
 
@@ -120,7 +120,7 @@ export default function CreatePost() {
         toast.success("Navigating to buzz page...", { autoClose: 3000 });
       }, 1000);
       setTimeout(() => {
-        navigate(`/buzz/${result.post_url}`);
+        navigate(`/buzzbee/buzz/${result.post_url}`);
       }, 3000);
     } catch (e) {
       toast.error("Error creating buzz. Please try again.", {

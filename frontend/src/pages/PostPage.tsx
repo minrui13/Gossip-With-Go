@@ -81,7 +81,7 @@ export default function PostPage() {
 
   useEffect(() => {
     if (!buzz_url) {
-      navigate("/404");
+      navigate("/buzzbee/404");
     }
     const mainDiv = postPageDivRef.current;
     if (!mainDiv) return;
@@ -133,7 +133,7 @@ export default function PostPage() {
       setPostContent(formattedPostDate.content);
       setPostTitle(formattedPostDate.title);
     } catch (error) {
-      navigate("/404");
+      navigate("/buzzbee/404");
     }
   }
 

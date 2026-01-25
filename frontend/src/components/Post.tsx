@@ -212,7 +212,7 @@ export default function Post({
       return;
     }
 
-    navigate(`/buzz/${post_url}`);
+    navigate(`/buzzbee/buzz/${post_url}`);
   }
 
   async function editPost() {

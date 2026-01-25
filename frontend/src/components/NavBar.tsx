@@ -349,7 +349,7 @@ export default function NavBar() {
                     Hive
                   </NavDropdown.Item>
                   <NavDropdown.Item
-                    href="/createBuzz"
+                    href="/buzzbee/createBuzz"
                     style={{
                       borderBottomRightRadius: 5,
                       borderBottomLeftRadius: 5,
@@ -378,7 +378,7 @@ export default function NavBar() {
                   }
                 >
                   <NavDropdown.Item
-                    href={`/profile/${user.user_id}`}
+                    href={`/buzzbee/profile/${user.user_id}`}
                     style={{ borderTopRightRadius: 5, borderTopLeftRadius: 5 }}
                   >
                     Profile
@@ -416,7 +416,7 @@ export default function NavBar() {
                 style={{ gap: 20 }}
               >
                 {/*Sign up - public users */}
-                <Nav.Link className="nav-link p-0" href="/signup">
+                <Nav.Link className="nav-link p-0" href="/buzzbee/signup">
                   <button
                     className="btn nav-btn-non-members branchbrown-branchbrown-milkwhite-hover nav-btn"
                     type="button"
@@ -426,7 +426,7 @@ export default function NavBar() {
                 </Nav.Link>
 
                 {/*Log in - public users */}
-                <Nav.Link className="nav-link p-0" href="/login">
+                <Nav.Link className="nav-link p-0" href="/buzzbee/login">
                   <button
                     className="btn  nav-btn-non-members branchbrown-branchbrown-milkwhite-hover nav-btn"
                     type="button"
