@@ -8,6 +8,12 @@
   src: url("../font/ZabalDEMO-Bold.otf");
 }
 
+@font-face {
+  font-family: "Antapani";
+  src: url("../font/Antapani-ExtraBold.otf");
+
+}
+
 :root {
   --honey-yellow: #ffc03b;
   --canary-yellow: #ffe9bb;
