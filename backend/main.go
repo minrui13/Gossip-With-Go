@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 
-	"github.com/joho/godotenv"
 	"github.com/minrui13/backend/config"
 	db "github.com/minrui13/backend/database"
 	"github.com/minrui13/backend/server"
@@ -11,10 +10,10 @@ import (
 
 func main() {
 
-	//attempting to load env fle
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	// //attempting to load env fle
+	// if err := godotenv.Load(); err != nil {
+	// 	log.Fatal("Error loading .env file")
+	// }
 
 	//connecting the database
 	dbPool, err := db.Connect()
