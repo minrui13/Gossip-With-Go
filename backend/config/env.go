@@ -13,8 +13,9 @@ import (
 var Envs = initConfig()
 
 func initConfig() types.Config {
-	//load .env file
-	godotenv.Load()
+	if os.Getenv("GO_ENV") != "production" {
+		_ = godotenv.Load() 
+	}
 	return types.Config{
 		PORT:                   getEnv("PORT", "8080"),
 		DATABASE_URL:           getEnv("DATABASE_URL", ""),

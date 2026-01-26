@@ -26,19 +26,19 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
+            <Route path="/buzzbee/login" element={<Login />} />
+            <Route path="/buzzbee/signup" element={<SignUp />} />
             <Route element={<PageLayout />}>
               <Route path="/" element={<MainPage />} />
-              <Route path="/hive">
+              <Route path="/buzzbee/hive">
                 <Route path=":hive_id" element={<MainPage />} />
               </Route>
-              <Route path="/buzz">
+              <Route path="/buzz/bee/buzz">
                 <Route path=":buzz_url" element={<PostPage />} />
               </Route>
-              <Route path="/createBuzz" element={<RequireAuth component={<CreatePost />} />} />
+              <Route path="/buzzbee/createBuzz" element={<RequireAuth component={<CreatePost />} />} />
               <Route
-                path="/profile/:username"
+                path="/buzzbee/profile/:username"
                 element={<RequireAuth component={<Profile />} />}
               />
             </Route>
